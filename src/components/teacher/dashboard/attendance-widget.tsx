@@ -1,42 +1,53 @@
 import React, { useState, useRef, useEffect } from "react";
-import { mockCourses } from "@/lib/mock-data";
 import * as faceapi from "face-api.js";
+import * as XLSX from "xlsx";
 
-const mockStudents = [
-  { id: 1, name: "Alex Doe", email: "alex.doe@unihub.com" },
-  { id: 2, name: "Jane Smith", email: "jane.smith@unihub.com" },
-  { id: 3, name: "Tom Brown", email: "tom.brown@unihub.com" },
-];
+interface Student {
+  id: string;
+  name: string;
+  enrollment: string;
+  descriptor: Float32Array;
+}
 
 const attendanceStatuses = ["present", "absent", "late"];
 
 export function AttendanceWidget() {
   const today = new Date().toISOString().split("T")[0];
-  // Track: {
-  //   [courseId]: { [studentId]: 'present'|'absent'|'late' }
-  // }
-  const [attendance, setAttendance] = useState(() => {
-    const initial = {};
-    mockCourses.forEach((course) => {
-      initial[course.id] = {};
-      mockStudents.forEach((s) => {
-        initial[course.id][s.id] = "present";
-      });
-    });
-    return initial;
+  const [students, setStudents] = useState<Student[]>(() => {
+    const stored = localStorage.getItem("attendance_students");
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        return parsed.map((s: any) => ({
+          ...s,
+          descriptor: new Float32Array(s.descriptor),
+        }));
+      } catch (e) {
+        console.error("Error parsing stored students:", e);
+        return [];
+      }
+    }
+    return [];
+  });
+
+  const [attendance, setAttendance] = useState<{ [studentId: string]: string }>(() => {
+    const stored = localStorage.getItem(`attendance_${today}`);
+    return stored ? JSON.parse(stored) : {};
   });
 
   const [saved, setSaved] = useState(false);
   const [isFaceRecognitionActive, setIsFaceRecognitionActive] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState(
-    mockCourses[0]?.id || null,
-  );
-  const [recognizedStudents, setRecognizedStudents] = useState(new Set());
+  const [recognizedStudents, setRecognizedStudents] = useState(new Set<string>());
   const [modelsLoaded, setModelsLoaded] = useState(false);
-  const [storedFaces, setStoredFaces] = useState([]);
+  const [registerName, setRegisterName] = useState("");
+  const [registerEnrollment, setRegisterEnrollment] = useState("");
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [isMarking, setIsMarking] = useState(false);
+  const [classPhoto, setClassPhoto] = useState<File | null>(null);
 
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load face-api.js models
   useEffect(() => {
@@ -53,32 +64,23 @@ export function AttendanceWidget() {
     loadModels();
   }, []);
 
-  // Fetch stored face embeddings
+  // Save students to localStorage
   useEffect(() => {
-    const fetchStoredFaces = async () => {
-      try {
-        const { data, error } = await api.get('/api/student-faces');
-        if (error) {
-          console.error("Error fetching stored faces:", error);
-          return;
-        }
-        setStoredFaces(data.filter((f) => f.faceEmbedding));
-      } catch (error) {
-        console.error("Error fetching stored faces:", error);
-      }
-    };
-    fetchStoredFaces();
-  }, []);
+    localStorage.setItem("attendance_students", JSON.stringify(students.map(s => ({
+      ...s,
+      descriptor: Array.from(s.descriptor),
+    }))));
+  }, [students]);
 
-  const startFaceRecognition = async () => {
-    if (!modelsLoaded) {
-      alert("Face recognition models are still loading. Please wait.");
-      return;
-    }
+  // Save attendance to localStorage
+  useEffect(() => {
+    localStorage.setItem(`attendance_${today}`, JSON.stringify(attendance));
+  }, [attendance, today]);
 
-    setIsFaceRecognitionActive(true);
-    setRecognizedStudents(new Set());
+  const registerStudent = async () => {
+    if (!modelsLoaded || !registerName.trim() || !registerEnrollment.trim()) return;
 
+    setIsRegistering(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       if (videoRef.current) {
@@ -86,108 +88,120 @@ export function AttendanceWidget() {
         videoRef.current.play();
       }
 
-      // Start detection loop
-      const detectFaces = async () => {
-        if (!videoRef.current || !canvasRef.current) return;
-
-        const detections = await faceapi
-          .detectAllFaces(
-            videoRef.current,
-            new faceapi.TinyFaceDetectorOptions(),
-          )
-          .withFaceLandmarks()
-          .withFaceDescriptors();
-
-        const canvas = canvasRef.current;
-        const displaySize = {
-          width: videoRef.current.width,
-          height: videoRef.current.height,
-        };
-        faceapi.matchDimensions(canvas, displaySize);
-
-        const resizedDetections = faceapi.resizeResults(
-          detections,
-          displaySize,
-        );
-        canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
-        faceapi.draw.drawDetections(canvas, resizedDetections);
-        faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
-
-        // Compare with stored faces
-        detections.forEach((detection) => {
-          storedFaces.forEach((storedFace) => {
-            if (storedFace.faceEmbedding) {
-              const distance = faceapi.euclideanDistance(
-                detection.descriptor,
-                storedFace.faceEmbedding,
-              );
-              if (distance < 0.6) {
-                // Threshold for recognition
-                setRecognizedStudents(
-                  (prev) => new Set([...prev, storedFace.studentId]),
-                );
-                // Mark attendance automatically
-                handleMark(selectedCourse, storedFace.studentId, "present");
-              }
-            }
-          });
-        });
-
-        if (isFaceRecognitionActive) {
-          requestAnimationFrame(detectFaces);
+      // Wait for video to load
+      await new Promise(resolve => {
+        if (videoRef.current) {
+          videoRef.current.onloadedmetadata = resolve;
         }
-      };
-
-      detectFaces();
-    } catch (error) {
-      console.error("Error starting face recognition:", error);
-      alert("Error accessing camera. Please check permissions.");
-    }
-  };
-
-  const stopFaceRecognition = () => {
-    setIsFaceRecognitionActive(false);
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject;
-      stream.getTracks().forEach((track) => track.stop());
-      videoRef.current.srcObject = null;
-    }
-  };
-
-  function handleMark(courseId, studentId, status) {
-    setAttendance((prev) => ({
-      ...prev,
-      [courseId]: {
-        ...prev[courseId],
-        [studentId]: status,
-      },
-    }));
-    setSaved(false);
-  }
-
-  function handleSave() {
-    setSaved(true);
-    // Here you would call the real API to save attendance.
-  }
-
-  function handleReset() {
-    setAttendance(() => {
-      const initial = {};
-      mockCourses.forEach((course) => {
-        initial[course.id] = {};
-        mockStudents.forEach((s) => {
-          initial[course.id][s.id] = "present";
-        });
       });
-      return initial;
-    });
+
+      const detections = await faceapi
+        .detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptors();
+
+      if (detections.length === 0) {
+        alert("No face detected. Please position yourself in front of the camera.");
+      } else if (detections.length > 1) {
+        alert("Multiple faces detected. Please ensure only one face is visible.");
+      } else {
+        const descriptor = detections[0].descriptor;
+        const newStudent: Student = {
+          id: Date.now().toString(),
+          name: registerName.trim(),
+          enrollment: registerEnrollment.trim(),
+          descriptor,
+        };
+        setStudents(prev => [...prev, newStudent]);
+        setRegisterName("");
+        setRegisterEnrollment("");
+        alert("Student registered successfully!");
+      }
+
+      // Stop stream
+      stream.getTracks().forEach(track => track.stop());
+      if (videoRef.current) videoRef.current.srcObject = null;
+    } catch (error) {
+      console.error("Error registering student:", error);
+      alert("Error accessing camera. Please check permissions.");
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
+  const markAttendanceFromPhoto = async () => {
+    if (!classPhoto || students.length === 0) return;
+
+    setIsMarking(true);
+    try {
+      const img = await faceapi.fetchImage(URL.createObjectURL(classPhoto));
+      const detections = await faceapi
+        .detectAllFaces(img, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptors();
+
+      const presentIds = new Set<string>();
+      detections.forEach(detection => {
+        let bestMatch = { distance: Infinity, student: null as Student | null };
+        students.forEach(student => {
+          const distance = faceapi.euclideanDistance(detection.descriptor, student.descriptor);
+          if (distance < bestMatch.distance) {
+            bestMatch = { distance, student };
+          }
+        });
+        if (bestMatch.distance < 0.6 && bestMatch.student) {
+          presentIds.add(bestMatch.student.id);
+        }
+      });
+
+      const newAttendance = { ...attendance };
+      students.forEach(student => {
+        newAttendance[student.id] = presentIds.has(student.id) ? "present" : "absent";
+      });
+      setAttendance(newAttendance);
+      setClassPhoto(null);
+      alert(`Attendance marked! ${presentIds.size} students present out of ${detections.length} faces detected.`);
+    } catch (error) {
+      console.error("Error marking attendance:", error);
+      alert("Error processing the image.");
+    } finally {
+      setIsMarking(false);
+    }
+  };
+
+  const downloadExcel = () => {
+    const data = students.map(student => ({
+      Name: student.name,
+      Enrollment_No: student.enrollment,
+      Attendance_ID: student.id,
+      Status: attendance[student.id] || "absent",
+      Date: today,
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Attendance");
+    XLSX.writeFile(wb, `attendance_${today}.xlsx`);
+  };
+
+  const handleMark = (studentId: string, status: string) => {
+    setAttendance(prev => ({ ...prev, [studentId]: status }));
     setSaved(false);
-  }
+  };
+
+  const handleSave = () => {
+    setSaved(true);
+  };
+
+  const handleReset = () => {
+    setAttendance({});
+    setSaved(false);
+  };
 
   return (
-    <div className="bg-white dark:bg-[#181e34] rounded-xl shadow-lg p-6 mb-8 w-full max-w-2xl mx-auto animate-fade-in">
+    <div className="bg-white dark:bg-[#181e34] rounded-xl shadow-lg p-6 mb-8 w-full max-w-4xl mx-auto animate-fade-in">
       <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-        Attendance Marking
+        AI-Powered Face Recognition Attendance
       </h2>
       <p className="mb-4 text-xs text-gray-400 dark:text-gray-400">
         Today's Date:{" "}
@@ -196,45 +210,36 @@ export function AttendanceWidget() {
         </span>
       </p>
 
-      {/* Face Recognition Section */}
+      {/* Student Registration Section */}
       <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
         <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-white">
-          Face Recognition Attendance
+          Register Student
         </h3>
-        <div className="mb-3">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Select Course:
-          </label>
-          <select
-            value={selectedCourse}
-            onChange={(e) => setSelectedCourse(parseInt(e.target.value))}
-            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-          >
-            {mockCourses.map((course) => (
-              <option key={course.id} value={course.id}>
-                {course.title}
-              </option>
-            ))}
-          </select>
+        <div className="mb-3 flex gap-2">
+          <input
+            type="text"
+            placeholder="Student Name"
+            value={registerName}
+            onChange={(e) => setRegisterName(e.target.value)}
+            className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          />
+          <input
+            type="text"
+            placeholder="Enrollment Number"
+            value={registerEnrollment}
+            onChange={(e) => setRegisterEnrollment(e.target.value)}
+            className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          />
         </div>
-        <div className="flex gap-2 mb-3">
-          <button
-            onClick={startFaceRecognition}
-            disabled={isFaceRecognitionActive || !modelsLoaded}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400"
-          >
-            {modelsLoaded ? "Start Face Recognition" : "Loading Models..."}
-          </button>
-          <button
-            onClick={stopFaceRecognition}
-            disabled={!isFaceRecognitionActive}
-            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-400"
-          >
-            Stop
-          </button>
-        </div>
-        {isFaceRecognitionActive && (
-          <div className="relative mb-3">
+        <button
+          onClick={registerStudent}
+          disabled={isRegistering || !modelsLoaded || !registerName.trim() || !registerEnrollment.trim()}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+        >
+          {isRegistering ? "Registering..." : modelsLoaded ? "Capture Face & Register" : "Loading Models..."}
+        </button>
+        {isRegistering && (
+          <div className="relative mt-3">
             <video
               ref={videoRef}
               width="320"
@@ -249,78 +254,120 @@ export function AttendanceWidget() {
             />
           </div>
         )}
-        {recognizedStudents.size > 0 && (
-          <div className="text-sm text-green-600 dark:text-green-400">
-            Recognized Students: {Array.from(recognizedStudents).join(", ")}
-          </div>
+      </div>
+
+      {/* Attendance Marking Section */}
+      <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-white">
+          Mark Attendance from Class Photo
+        </h3>
+        <input
+          type="file"
+          accept="image/*"
+          ref={fileInputRef}
+          onChange={(e) => setClassPhoto(e.target.files?.[0] || null)}
+          className="mb-3"
+        />
+        <button
+          onClick={markAttendanceFromPhoto}
+          disabled={isMarking || !classPhoto || students.length === 0}
+          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400"
+        >
+          {isMarking ? "Processing..." : "Upload & Mark Attendance"}
+        </button>
+        {students.length === 0 && (
+          <p className="text-sm text-red-600 dark:text-red-400 mt-2">
+            No registered students. Please register students first.
+          </p>
         )}
       </div>
 
-      {mockCourses.map((course) => (
-        <div key={course.id} className="mb-6">
-          <div className="font-bold text-blue-600 dark:text-blue-400 mb-2 text-lg">
-            {course.title}
-          </div>
-          <table className="w-full text-left mb-3">
-            <thead>
-              <tr className="text-xs text-gray-500 dark:text-gray-400">
-                <th className="py-1 px-2">Student</th>
-                <th className="py-1 px-2">Email</th>
-                <th className="py-1 px-2">Status</th>
+      {/* Attendance Table */}
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-white">
+          Attendance Table
+        </h3>
+        <table className="w-full text-left mb-3">
+          <thead>
+            <tr className="text-xs text-gray-500 dark:text-gray-400">
+              <th className="py-1 px-2">Name</th>
+              <th className="py-1 px-2">Enrollment No.</th>
+              <th className="py-1 px-2">Status</th>
+              <th className="py-1 px-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {students.map((student) => (
+              <tr
+                key={student.id}
+                className="border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-[#1a2238] transition"
+              >
+                <td className="py-1 px-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {student.name}
+                </td>
+                <td className="py-1 px-2 text-xs text-gray-600 dark:text-gray-300">
+                  {student.enrollment}
+                </td>
+                <td className="py-1 px-2 text-sm font-semibold">
+                  <span className={`px-2 py-1 rounded ${
+                    attendance[student.id] === "present" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" :
+                    attendance[student.id] === "absent" ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200" :
+                    attendance[student.id] === "late" ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200" :
+                    "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                  }`}>
+                    {(attendance[student.id] || "absent").charAt(0).toUpperCase() + (attendance[student.id] || "absent").slice(1)}
+                  </span>
+                </td>
+                <td className="py-1 px-2">
+                  <div className="flex gap-1">
+                    {attendanceStatuses.map((status) => (
+                      <button
+                        key={status}
+                        onClick={() => handleMark(student.id, status)}
+                        className={`text-xs px-2 py-1 rounded border border-gray-200 dark:border-gray-600 font-medium transition ${
+                          attendance[student.id] === status
+                            ? "bg-blue-600 text-white dark:bg-blue-500"
+                            : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900"
+                        }`}
+                      >
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {mockStudents.map((student) => (
-                <tr
-                  key={student.id}
-                  className="border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-[#1a2238] transition"
-                >
-                  <td className="py-1 px-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {student.name}
-                  </td>
-                  <td className="py-1 px-2 text-xs text-gray-600 dark:text-gray-300">
-                    {student.email}
-                  </td>
-                  <td className="py-1 px-2">
-                    <div className="flex gap-1">
-                      {attendanceStatuses.map((status) => (
-                        <button
-                          key={status}
-                          onClick={() =>
-                            handleMark(course.id, student.id, status)
-                          }
-                          className={`text-xs px-2 py-1 rounded border border-gray-200 dark:border-gray-600 font-medium transition
-                            ${
-                              attendance[course.id][student.id] === status
-                                ? "bg-blue-600 text-white dark:bg-blue-500"
-                                : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900"
-                            }
-                          `}
-                        >
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
-                        </button>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            ))}
+          </tbody>
+        </table>
+        {students.length === 0 && (
+          <p className="text-gray-500 dark:text-gray-400 mt-4">
+            No students registered yet. Register students first.
+          </p>
+        )}
+      </div>
+
+      <div className="flex gap-3 justify-between mt-4">
+        <button
+          onClick={downloadExcel}
+          disabled={students.length === 0}
+          className="px-4 py-2 text-xs font-semibold rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:bg-gray-400"
+        >
+          Download Excel Report
+        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleReset}
+            className="px-4 py-2 text-xs font-semibold rounded-lg bg-gray-300 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-700 transition"
+          >
+            Reset
+          </button>
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
+          >
+            Save Attendance
+          </button>
         </div>
-      ))}
-      <div className="flex gap-3 justify-end mt-4">
-        <button
-          onClick={handleReset}
-          className="px-4 py-2 text-xs font-semibold rounded-lg bg-gray-300 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-700 transition"
-        >
-          Reset
-        </button>
-        <button
-          onClick={handleSave}
-          className="px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
-        >
-          Save Attendance
-        </button>
       </div>
       {saved && (
         <div className="mt-4 text-green-600 dark:text-green-400 text-sm font-semibold">

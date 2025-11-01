@@ -86,6 +86,14 @@ export interface Attendance {
   updated_at: string;
 }
 
+export interface PendingTask {
+  id: number;
+  title: string;
+  course: string;
+  dueDate: string;
+  priority?: "low" | "medium" | "high";
+}
+
 // Event types
 export interface Event {
   id: number;

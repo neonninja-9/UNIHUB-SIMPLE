@@ -8,3 +8,4 @@ export * from "./schedule";
 export * from "./attendance-chart";
 export * from "./notification-board";
 export * from "./resource-hub";
+export * from "./mobile-engagement-card";

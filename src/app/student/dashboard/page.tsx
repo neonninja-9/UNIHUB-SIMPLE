@@ -7,18 +7,18 @@ import {
   mockStudentCourses,
   mockRecentGrades,
 } from "@/lib/student-mock-data";
-import { Attendance } from "@/lib/types";
+import { Attendance, PendingTask } from "@/lib/types";
 import { Sidebar } from "@/components/student/dashboard/sidebar";
 import {
   WelcomeCard,
   StatsCards,
-  CourseList,
   QuickLinks,
   Deadlines,
   Schedule,
   AttendanceChart,
   NotificationBoard,
   ResourceHub,
+  MobileEngagementCard,
 } from "@/components/student/dashboard/components";
 import { DashboardHeader } from "@/components/student/dashboard/components/header";
 import DigiLockerWidget from "@/components/DigiLockerWidget";
@@ -39,6 +39,7 @@ export default function StudentDashboard() {
   const [grades, setGrades] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pendingTasks, setPendingTasks] = useState<PendingTask[]>([]);
 
   useEffect(() => {
     // Instead of fetching from API, use mock data
@@ -423,6 +424,29 @@ export default function StudentDashboard() {
           updated_at: "",
         })),
     ]);
+    setPendingTasks([
+      {
+        id: 1,
+        title: "Finish lab report",
+        course: "Modern Physics",
+        dueDate: "2025-11-02",
+        priority: "high",
+      },
+      {
+        id: 2,
+        title: "Read chapters 5-6",
+        course: "Calculus II",
+        dueDate: "2025-11-05",
+        priority: "medium",
+      },
+      {
+        id: 3,
+        title: "Essay outline review",
+        course: "Intro to Literature",
+        dueDate: "2025-11-09",
+        priority: "low",
+      },
+    ]);
     setLoading(false);
   }, [router]);
 
@@ -463,13 +487,19 @@ export default function StudentDashboard() {
             {/* Left & Center Content */}
             <div className="sm:col-span-2 space-y-4 md:space-y-6">
               <WelcomeCard student={student} />
+              <MobileEngagementCard
+                attendance={attendance}
+                courses={courses}
+                pendingTasks={pendingTasks}
+              />
               <StatsCards
                 grades={grades}
                 attendance={attendance}
                 courses={courses}
               />
-              <CourseList courses={courses} attendance={attendance} />
-              <AttendanceChart courses={courses} attendance={attendance} />
+              <div className="hidden md:block">
+                <AttendanceChart courses={courses} attendance={attendance} />
+              </div>
               <QuickLinks />
             </div>
             {/* Right Sidebar Widgets */}

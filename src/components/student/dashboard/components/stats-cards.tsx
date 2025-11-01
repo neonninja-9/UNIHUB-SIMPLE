@@ -1,5 +1,7 @@
 import { BookOpen, Users, AlertCircle, Award } from "lucide-react";
+import { useState } from "react";
 import { Grade, Attendance, Course } from "@/lib/types";
+import { CGPAGraph } from "./cgpa-graph";
 
 interface StatsCardsProps {
   grades: Grade[];
@@ -8,6 +10,8 @@ interface StatsCardsProps {
 }
 
 export function StatsCards({ grades, attendance, courses }: StatsCardsProps) {
+  const [showCGPAGraph, setShowCGPAGraph] = useState(false);
+
   const calculateGPA = () => {
     const completedGrades = grades.filter((g) => g.marks_obtained !== null);
     const totalPoints = completedGrades.reduce((sum, grade) => {
@@ -40,13 +44,16 @@ export function StatsCards({ grades, attendance, courses }: StatsCardsProps) {
   const pendingTasks = grades.filter((g) => g.marks_obtained === null).length;
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <StatCard
-        icon={<BookOpen className="w-5 h-5 text-green-400" />}
-        iconBg="bg-green-500/20"
-        label="CGPA"
-        value={calculateGPA()}
-      />
+    <>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          icon={<BookOpen className="w-5 h-5 text-green-400" />}
+          iconBg="bg-green-500/20"
+          label="CGPA"
+          value={calculateGPA()}
+          onClick={() => setShowCGPAGraph(true)}
+          clickable={true}
+        />
 
       <StatCard
         icon={<Users className="w-5 h-5 text-blue-400" />}
@@ -62,13 +69,18 @@ export function StatsCards({ grades, attendance, courses }: StatsCardsProps) {
         value={pendingTasks}
       />
 
-      <StatCard
-        icon={<Award className="w-5 h-5 text-yellow-400" />}
-        iconBg="bg-yellow-500/20"
-        label="Courses"
-        value={courses.length}
-      />
-    </div>
+        <StatCard
+          icon={<Award className="w-5 h-5 text-yellow-400" />}
+          iconBg="bg-yellow-500/20"
+          label="Courses"
+          value={courses.length}
+        />
+      </div>
+
+      {showCGPAGraph && (
+        <CGPAGraph onClose={() => setShowCGPAGraph(false)} />
+      )}
+    </>
   );
 }
 
@@ -77,11 +89,18 @@ interface StatCardProps {
   iconBg: string;
   label: string;
   value: string | number;
+  onClick?: () => void;
+  clickable?: boolean;
 }
 
-function StatCard({ icon, iconBg, label, value }: StatCardProps) {
+function StatCard({ icon, iconBg, label, value, onClick, clickable }: StatCardProps) {
   return (
-    <div className="bg-[#1A1F3A] dark:bg-white rounded-xl p-5 shadow-lg dark:shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
+    <div
+      className={`bg-[#1A1F3A] dark:bg-white rounded-xl p-5 shadow-lg dark:shadow-[0_4px_12px_rgba(0,0,0,0.08)] ${
+        clickable ? "cursor-pointer hover:bg-[#2A2F4A] dark:hover:bg-gray-50 transition-colors" : ""
+      }`}
+      onClick={onClick}
+    >
       <div className="flex items-center gap-3 mb-2">
         <div
           className={`w-10 h-10 rounded-full ${iconBg} flex items-center justify-center`}
