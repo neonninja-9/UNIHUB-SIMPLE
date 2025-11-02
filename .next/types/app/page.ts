@@ -1,4 +1,4 @@
-// File: D:\Coding\Uni Hub\UNIHUB\src\app\page.tsx
+// File: /home/himanshu/UNIHUB-SIMPLE/src/app/page.tsx
 import * as entry from '../../../src/app/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
