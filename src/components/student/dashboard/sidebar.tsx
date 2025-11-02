@@ -1,5 +1,7 @@
 "use client";
 import React, { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Home,
   Info,
@@ -25,6 +27,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const router = useRouter();
+  const pathname = usePathname();
   const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});
 
   const toggleMenu = (menu: string) => {
@@ -32,7 +35,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   };
 
   const menuItems = [
-    { name: "Home", icon: Home, subItems: [] },
+    { name: "Home", icon: Home, href: "/student/dashboard", subItems: [] },
+    { name: "Attendance", icon: GraduationCap, href: "/student/attendance", subItems: [] },
+    { name: "Courses", icon: BookOpen, href: "/student/courses", subItems: [] },
+    { name: "DigiLocker", icon: FileText, href: "/student/digilocker", subItems: [] },
     {
       name: "General Information",
       icon: Info,
@@ -153,12 +159,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       )}
 
       {/* Sidebar */}
-      <div className={`fixed left-0 top-0 h-screen w-64 bg-[#0A0E27] border-r border-gray-700 overflow-y-auto z-30 transform transition-transform duration-300 ${
+      <div className={`fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 overflow-y-auto z-30 transform transition-transform duration-300 ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
-        <div className="p-5 bg-[#1a1f3a] border-b border-gray-700">
+        <div className="p-5 bg-blue-600 border-b border-gray-200">
           <h1 className="text-2xl font-bold text-white">UNIHUB</h1>
-          <p className="text-gray-300 text-sm mt-1">Student Portal</p>
+          <p className="text-blue-100 text-sm mt-1">Student Portal</p>
         </div>
         <nav className="flex-1">
           <ul>
@@ -167,7 +173,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 {item.subItems.length > 0 ? (
                   <>
                     <div
-                      className="px-5 py-3 text-gray-300 hover:bg-[#1a1f3a] hover:text-white cursor-pointer flex items-center justify-between transition-colors"
+                      className="px-5 py-3 text-gray-700 hover:bg-gray-50 hover:text-blue-600 cursor-pointer flex items-center justify-between transition-colors"
                       onClick={() => toggleMenu(item.name)}
                     >
                       <div className="flex items-center">
@@ -189,7 +195,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                         {item.subItems.map((subItem) => (
                           <li
                             key={subItem}
-                            className="px-5 py-2 text-gray-400 hover:bg-[#1a1f3a] hover:text-white cursor-pointer transition-colors"
+                            className="px-5 py-2 text-gray-600 hover:bg-gray-50 hover:text-blue-600 cursor-pointer transition-colors"
                           >
                             {subItem}
                           </li>
@@ -203,16 +209,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                       localStorage.clear();
                       router.push("/");
                     }}
-                    className="flex items-center gap-3 w-full px-5 py-3 text-red-400 hover:bg-[#1a1f3a] font-medium transition-colors"
+                    className="flex items-center gap-3 w-full px-5 py-3 text-red-600 hover:bg-red-50 font-medium transition-colors"
                   >
                     <item.icon className="w-5 h-5" />
                     <span>{item.name}</span>
                   </button>
                 ) : (
-                  <div className="px-5 py-3 text-gray-300 hover:bg-[#1a1f3a] hover:text-white cursor-pointer flex items-center transition-colors">
+                  <Link href={item.href || "#"} className={`flex items-center px-5 py-3 text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors ${pathname === item.href ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600' : ''}`}>
                     <item.icon className="w-5 h-5 mr-3 text-gray-400" />
                     {item.name}
-                  </div>
+                  </Link>
                 )}
               </li>
             ))}

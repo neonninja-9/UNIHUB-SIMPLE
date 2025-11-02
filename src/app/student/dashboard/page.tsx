@@ -22,7 +22,6 @@ import {
   MobileEngagementCard,
 } from "@/components/student/dashboard/components";
 import { DashboardHeader } from "@/components/student/dashboard/components/header";
-import DigiLockerWidget from "@/components/DigiLockerWidget";
 import { Chatbot } from "@/components/ui/chatbot";
 import { useToast } from "@/hooks/use-toast";
 import { CourseList } from "@/components/student/dashboard/components/course-list";
@@ -555,11 +554,6 @@ export default function StudentDashboard() {
             {/* Left & Center Content */}
             <div className="sm:col-span-2 space-y-4 md:space-y-6">
               <WelcomeCard student={student} />
-              <MobileEngagementCard
-                attendance={attendance}
-                courses={courses}
-                pendingTasks={pendingTasks}
-              />
               <StatsCards
                 grades={grades}
                 attendance={attendance}
@@ -582,6 +576,11 @@ export default function StudentDashboard() {
 
             {/* Right Sidebar Widgets */}
             <div className="space-y-4 md:space-y-6">
+              <MobileEngagementCard
+                attendance={attendance}
+                courses={courses}
+                pendingTasks={pendingTasks}
+              />
               <Deadlines courses={courses} grades={grades} />
               <Schedule courses={courses} />
               <NotificationBoard
@@ -590,7 +589,6 @@ export default function StudentDashboard() {
                 attendance={attendance}
               />
               <ResourceHub />
-              <DigiLockerWidget userType="student" />
             </div>
           </div>
         </div>

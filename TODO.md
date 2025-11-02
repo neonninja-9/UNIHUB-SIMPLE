@@ -1,20 +1,33 @@
-# TODO: Add ID Card Icon to Student Dashboard Header
+# Student Portal Dashboard Refactor & Enhancement TODO
 
-## Steps to Complete:
-- [x] Update DashboardHeader component to include ID card icon button
-- [x] Add onIDCardClick prop to DashboardHeader
-- [x] Modify student dashboard page to pass onIDCardClick handler
-- [x] Fix modal props to use isOpen instead of conditional rendering
-- [x] Test the modal opens on icon click
+## 1. Page Routing Setup
+- [ ] Create `/attendance/page.tsx` for detailed attendance page
+- [ ] Create `/courses/page.tsx` for all enrolled courses display
+- [ ] Create `/digilocker/page.tsx` for DigiLocker integration
+- [ ] Modify `/dashboard/page.tsx` to be overview only (greeting, summary cards, quick links)
 
-# TODO List for Creating Suggestion Box Page
+## 2. Component Refactoring
+- [ ] Update `WelcomeCard` to be compact "Welcome back" card
+- [ ] Ensure consistent card design across all components with `shadow-md hover:shadow-lg`
+- [ ] Update `CourseList` to use grid layout (3-4 cards per row, responsive)
+- [ ] Move DigiLocker from widget to separate page
+- [ ] Update sidebar to navigate between pages using Next.js Link
 
-- [x] Create new page at /student/communications/query-to-faculty
-- [x] Create SuggestionBox component with tabs, sub-tabs, and button
-- [x] Update student sidebar to navigate to the new page on "QUERY TO FACULTY" click
+## 3. Styling & Theme Updates
+- [ ] Update `globals.css` to remove visible scrollbars and add smooth scrolling
+- [ ] Update `tailwind.config.js` to include Inter/Poppins fonts and custom theme colors
+- [ ] Change primary accent to `#3B82F6` (blue-500)
+- [ ] Update background to `bg-gray-50`, text to `text-gray-700`
+- [ ] Apply `rounded-2xl` consistently
+- [ ] Add hover effects and transitions
 
-# TODO List for Adding Features to Teacher Dashboard
+## 4. Layout Improvements
+- [ ] Balance white space, reduce large gaps
+- [ ] Align resource and notification panels neatly on right side
+- [ ] Ensure responsive design
 
-- [x] Update sidebar component with new menu items (Amizone Home, eLibrary, etc.)
-- [x] Add mock classes schedule data to mock-data.ts
-- [x] Modify dashboard page to include scheduled classes table section
+## 5. Testing & Verification
+- [ ] Test navigation between pages
+- [ ] Verify responsive design
+- [ ] Check hover effects and transitions
+- [ ] Ensure DigiLocker page functions correctly

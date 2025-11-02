@@ -10,19 +10,19 @@ interface CourseListProps {
 export function CourseList({ courses, attendance, onCourseClick }: CourseListProps) {
   return (
     <div>
-      <h3 className="text-xl font-bold mb-4">My Courses</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <h3 className="text-xl font-bold mb-4 text-gray-700">My Courses</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {courses.map((course, index) => {
           // normalize id field: backend may return `id` or `course_id`
           const courseId =
             (course as any).id ?? (course as any).course_id ?? index;
           const colors = [
-            "from-blue-500 to-blue-700 dark:from-[#60a5fa] dark:to-[#3b82f6]",
-            "from-pink-500 to-pink-700 dark:from-[#f472b6] dark:to-[#ec4899]",
-            "from-green-500 to-green-700 dark:from-[#34d399] dark:to-[#10b981]",
-            "from-orange-500 to-orange-700 dark:from-[#fbbf24] dark:to-[#f59e0b]",
-            "from-violet-500 to-violet-700 dark:from-[#a78bfa] dark:to-[#8b5cf6]",
-            "from-teal-500 to-teal-700 dark:from-[#5eead4] dark:to-[#14b8a6]",
+            "from-blue-500 to-blue-700",
+            "from-pink-500 to-pink-700",
+            "from-green-500 to-green-700",
+            "from-orange-500 to-orange-700",
+            "from-violet-500 to-violet-700",
+            "from-teal-500 to-teal-700",
           ];
           const colorClass = colors[index % colors.length];
 
@@ -41,7 +41,7 @@ export function CourseList({ courses, attendance, onCourseClick }: CourseListPro
           return (
             <div
               key={courseId}
-              className={`bg-gradient-to-br ${colorClass} rounded-xl p-6 cursor-pointer hover:scale-105 transition-all duration-200 hover:shadow-xl`}
+              className={`bg-gradient-to-br ${colorClass} rounded-2xl p-6 cursor-pointer hover:scale-105 transition-all duration-200 hover:shadow-lg text-white`}
               onClick={() => onCourseClick?.(course)}
             >
               <div className="flex items-center justify-between mb-4">

@@ -101,21 +101,21 @@ export function MobileEngagementCard({
   const hasPendingTasks = pendingTasks.length > 0;
 
   return (
-    <section className="w-full max-w-4xl mx-auto rounded-3xl bg-white/80 backdrop-blur shadow-lg border border-white/70 dark:bg-[#111827]/80 dark:border-white/10 dark:shadow-xl">
+    <section className="w-full max-w-4xl mx-auto rounded-3xl bg-[#1F2937] backdrop-blur shadow-lg border-2 border-gray-600 dark:bg-[#111827] dark:border-white/10 dark:shadow-xl z-10 relative block">
       <div className="p-6 space-y-6">
         <header className="space-y-1 text-center">
           <p className="text-xs uppercase tracking-[0.25em] text-blue-500/80 dark:text-blue-400/80">
             Student Portal
           </p>
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+          <h2 className="text-2xl font-semibold text-white dark:text-white">
             Stay on top of your day
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-gray-300 dark:text-gray-400">
             Switch sections to see attendance, tasks, or your courses.
           </p>
         </header>
 
-        <div className="flex items-center gap-2 rounded-full bg-gray-100 p-1.5 dark:bg-gray-800/80">
+        <div className="flex items-center gap-2 rounded-full bg-gray-800/80 p-1.5 dark:bg-gray-800/80">
           {(
             [
               { key: "attendance", label: "Attendance", icon: BarChart2 },
@@ -131,8 +131,8 @@ export function MobileEngagementCard({
                 onClick={() => setActiveSection(key)}
                 className={`flex-1 rounded-full px-3 py-2 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-offset-gray-900 ${
                   isActive
-                    ? "bg-white shadow-sm text-gray-900 dark:bg-gray-900 dark:text-white"
-                    : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                    ? "bg-blue-600 shadow-sm text-white dark:bg-blue-600 dark:text-white"
+                    : "text-gray-300 hover:text-white dark:text-gray-400 dark:hover:text-white"
                 }`}
               >
                 <span className="flex flex-col items-center gap-1">

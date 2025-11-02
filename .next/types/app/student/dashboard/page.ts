@@ -1,4 +1,4 @@
-// File: /home/himanshu/UNIHUB-SIMPLE/src/app/student/dashboard/page.tsx
+// File: D:\Coding\Uni Hub\UNIHUB\src\app\student\dashboard\page.tsx
 import * as entry from '../../../../../src/app/student/dashboard/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
