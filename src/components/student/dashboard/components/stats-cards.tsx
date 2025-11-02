@@ -43,7 +43,7 @@ export function StatsCards({ grades, attendance, courses, onStatClick }: StatsCa
   const pendingTasks = grades.filter((g) => g.marks_obtained === null).length;
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl">
       <StatCard
         icon={<BookOpen className="w-5 h-5 text-green-400" />}
         iconBg="bg-green-500/20"

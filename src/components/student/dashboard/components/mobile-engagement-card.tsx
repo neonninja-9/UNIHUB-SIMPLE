@@ -101,7 +101,7 @@ export function MobileEngagementCard({
   const hasPendingTasks = pendingTasks.length > 0;
 
   return (
-    <section className="w-full max-w-xl mx-auto rounded-3xl bg-white/80 backdrop-blur shadow-lg border border-white/70 dark:bg-[#111827]/80 dark:border-white/10 dark:shadow-xl">
+    <section className="w-full max-w-4xl mx-auto rounded-3xl bg-white/80 backdrop-blur shadow-lg border border-white/70 dark:bg-[#111827]/80 dark:border-white/10 dark:shadow-xl">
       <div className="p-6 space-y-6">
         <header className="space-y-1 text-center">
           <p className="text-xs uppercase tracking-[0.25em] text-blue-500/80 dark:text-blue-400/80">
@@ -400,4 +400,3 @@ function CoursesSection({
     </div>
   );
 }
-
