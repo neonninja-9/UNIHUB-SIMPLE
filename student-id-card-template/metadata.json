@@ -1,0 +1,5 @@
+{
+  "name": "Student ID Card Template",
+  "description": "A responsive and interactive, flippable student ID card template built with React and Tailwind CSS, designed to be easily integrated into a student portal.",
+  "requestFramePermissions": []
+}

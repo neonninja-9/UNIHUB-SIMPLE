@@ -26,7 +26,7 @@ import DigiLockerWidget from "@/components/DigiLockerWidget";
 import { Chatbot } from "@/components/ui/chatbot";
 import { useToast } from "@/hooks/use-toast";
 import { CourseList } from "@/components/student/dashboard/components/course-list";
-import { StudentIDCardModal } from "@/components/student/dashboard/components/student-id-card-modal";
+import { IDCardModal } from "@/components/student/dashboard/components/IDCardModal";
 
 // Loading component
 const LoadingSpinner = () => (
@@ -63,6 +63,12 @@ export default function StudentDashboard() {
       parent_name: "John Thompson",
       parent_phone: "555-1234",
       email: "alex.thompson@student.unihub.com",
+      enrollment_no: "EN2024001",
+      date_of_birth: "2000-05-15",
+      blood_group: "O+",
+      institution_name: "University of Technology",
+      id_card_no: "IDC2024001",
+      profile_photo: "https://placehold.co/100x100/E2E8F0/4A5568?text=AT",
     });
     setCourses([
       {
@@ -540,6 +546,7 @@ export default function StudentDashboard() {
           onSearchChange={setSearchQuery}
           onRefresh={handleRefresh}
           refreshing={refreshing}
+          onIDCardClick={() => setShowIDCardModal(true)}
         />
 
         {/* Responsive Main Content */}
@@ -588,12 +595,11 @@ export default function StudentDashboard() {
         </div>
       </div>
       <Chatbot userType="student" userData={student} />
-      {showIDCardModal && (
-        <StudentIDCardModal
-          student={student}
-          onClose={() => setShowIDCardModal(false)}
-        />
-      )}
+      <IDCardModal
+        isOpen={showIDCardModal}
+        onClose={() => setShowIDCardModal(false)}
+        student={student}
+      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Search, Bell, Moon, Menu, Sun, RefreshCw } from "lucide-react";
+import { Search, Bell, Moon, Menu, Sun, RefreshCw, Badge } from "lucide-react";
 import { Student } from "@/lib/types";
 import { useTheme } from "@/hooks/use-theme";
 
@@ -10,6 +10,7 @@ interface HeaderProps {
   onSearchChange?: (query: string) => void;
   onRefresh?: () => void;
   refreshing?: boolean;
+  onIDCardClick?: () => void;
 }
 
 export function DashboardHeader({
@@ -20,6 +21,7 @@ export function DashboardHeader({
   onSearchChange,
   onRefresh,
   refreshing = false,
+  onIDCardClick,
 }: HeaderProps) {
   const { darkMode, setDarkMode } = useTheme();
 
@@ -59,6 +61,13 @@ export function DashboardHeader({
         </div>
 
         <div className="flex items-center gap-4">
+          <button
+            onClick={onIDCardClick}
+            className="p-2 hover:bg-gray-800 rounded-lg dark:hover:bg-gray-200 transition-colors"
+            title="View Student ID Card"
+          >
+            <Badge className="w-5 h-5 text-gray-400 dark:text-gray-600" />
+          </button>
           <button
             onClick={onRefresh}
             disabled={refreshing}

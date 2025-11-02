@@ -21,6 +21,12 @@ export interface Student {
   parent_name: string;
   parent_phone: string;
   email: string;
+  enrollment_no?: string;
+  date_of_birth?: string;
+  blood_group?: string;
+  institution_name?: string;
+  id_card_no?: string;
+  profile_photo?: string;
 }
 
 // Faculty types
