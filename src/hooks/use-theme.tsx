@@ -12,12 +12,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-    const isDark = localStorage.getItem("darkMode") === "true";
-    setDarkMode(isDark);
+    if (typeof window !== "undefined") {
+      const isDark = localStorage.getItem("darkMode") === "true";
+      setDarkMode(isDark);
+    }
   }, []);
 
   useEffect(() => {
-    if (mounted) {
+    if (mounted && typeof window !== "undefined") {
       if (darkMode) {
         document.documentElement.classList.add("dark");
         localStorage.setItem("darkMode", "true");

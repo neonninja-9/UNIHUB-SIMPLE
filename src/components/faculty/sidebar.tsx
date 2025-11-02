@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
   User,
@@ -38,6 +38,7 @@ import {
   FileCheck,
   Briefcase,
   Download,
+  LogOut,
 } from "lucide-react";
 
 interface FacultySidebarProps {
@@ -50,6 +51,7 @@ export const FacultySidebar: React.FC<FacultySidebarProps> = ({
   onToggle,
 }) => {
   const pathname = usePathname();
+  const router = useRouter();
   const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});
 
   const toggleMenu = (menu: string) => {
@@ -218,34 +220,50 @@ export const FacultySidebar: React.FC<FacultySidebarProps> = ({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4">
-          {menuSections.map((section) => (
-            <div key={section.title} className="mb-6">
-              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">
-                {section.title}
-              </h3>
-              <ul className="space-y-1">
-                {section.items.map((item) => {
-                  const isActive = pathname === item.href;
-                  return (
-                    <li key={item.name}>
-                      <Link
-                        href={item.href}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-slate-800 hover:text-white ${
-                          isActive
-                            ? "bg-blue-600 text-white shadow-md"
-                            : "text-gray-300"
-                        }`}
-                      >
-                        <item.icon className="w-5 h-5 flex-shrink-0" />
-                        <span className="truncate">{item.name}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
+        <nav className="flex-1 p-4 flex flex-col justify-between">
+          <div>
+            {menuSections.map((section) => (
+              <div key={section.title} className="mb-6">
+                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">
+                  {section.title}
+                </h3>
+                <ul className="space-y-1">
+                  {section.items.map((item) => {
+                    const isActive = pathname === item.href;
+                    return (
+                      <li key={item.name}>
+                        <Link
+                          href={item.href}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-slate-800 hover:text-white ${
+                            isActive
+                              ? "bg-blue-600 text-white shadow-md"
+                              : "text-gray-300"
+                          }`}
+                        >
+                          <item.icon className="w-5 h-5 flex-shrink-0" />
+                          <span className="truncate">{item.name}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          {/* Logout Button */}
+          <div className="mt-auto pt-4 border-t border-slate-700">
+            <button
+              onClick={() => {
+                localStorage.clear();
+                router.push("/");
+              }}
+              className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm font-medium text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-all duration-200"
+            >
+              <LogOut className="w-5 h-5 flex-shrink-0" />
+              <span>Logout</span>
+            </button>
+          </div>
         </nav>
       </aside>
     </>

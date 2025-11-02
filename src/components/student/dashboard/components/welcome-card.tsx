@@ -6,11 +6,11 @@ interface WelcomeCardProps {
 
 export function WelcomeCard({ student }: WelcomeCardProps) {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow duration-300">
-      <h2 className="text-2xl font-bold text-gray-700 mb-2">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-300">
+      <h2 className="text-2xl font-bold text-gray-700 dark:text-white mb-2">
         Welcome back, {student?.name || "Student"}! 👋
       </h2>
-      <p className="text-gray-600">Here's your dashboard overview for today.</p>
+      <p className="text-gray-600 dark:text-gray-300">Here's your dashboard overview for today.</p>
     </div>
   );
 }

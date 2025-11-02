@@ -132,4 +132,182 @@ export const api = {
       body: JSON.stringify(data),
     });
   },
+
+  // Admin APIs (Mock implementations)
+  async adminLogin(
+    email: string,
+    password: string,
+  ): Promise<{ success: boolean; token?: string; admin?: any; error?: string }> {
+    // Mock admin login - bypass API call
+    if (email === "admin@unihub.com" && password === "admin123") {
+      return {
+        success: true,
+        token: "mock-admin-token",
+        admin: {
+          id: 0,
+          email: "admin@unihub.com",
+          name: "Admin User",
+          role: "admin",
+        },
+      };
+    }
+    return {
+      success: false,
+      error: "Invalid credentials",
+    };
+  },
+
+  async adminVerify(): Promise<ApiResponse<any>> {
+    // Mock token verification
+    const token = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
+    if (!token) {
+      throw new Error("Unauthorized");
+    }
+    return { success: true, data: {} };
+  },
+
+  async adminGetDashboardStats(): Promise<ApiResponse<{ totalStudents: number; totalFaculty: number }>> {
+    // Mock stats - in a real app, this would fetch from the API
+    return {
+      success: true,
+      data: {
+        totalStudents: 150,
+        totalFaculty: 25,
+      },
+    };
+  },
+
+  async adminGetStudents(
+    searchTerm?: string,
+    classFilter?: string,
+  ): Promise<ApiResponse<Student[]>> {
+    // Mock students - in a real app, this would fetch from the API
+    const mockStudents: Student[] = [
+      {
+        id: 1,
+        user_id: 1,
+        name: "Alex Thompson",
+        email: "alex@student.unihub.com",
+        roll_number: "STU001",
+        enrollment_no: "STU001",
+        class_section: "CS-3A",
+        phone: "+1234567890",
+        address: "123 Main St",
+        parent_name: "John Thompson",
+        parent_phone: "+1234567891",
+      },
+      {
+        id: 2,
+        user_id: 2,
+        name: "Sarah Johnson",
+        email: "sarah@student.unihub.com",
+        roll_number: "STU002",
+        enrollment_no: "STU002",
+        class_section: "ME-2B",
+        phone: "+1234567892",
+        address: "456 Oak Ave",
+        parent_name: "Jane Johnson",
+        parent_phone: "+1234567893",
+      },
+    ];
+    return {
+      success: true,
+      data: mockStudents,
+    };
+  },
+
+  async adminGetFaculty(
+    searchTerm?: string,
+    departmentFilter?: string,
+  ): Promise<ApiResponse<Faculty[]>> {
+    // Mock faculty - in a real app, this would fetch from the API
+    const mockFaculty: Faculty[] = [
+      {
+        id: 1,
+        user_id: 1,
+        employee_id: "FAC001",
+        department: "Computer Science",
+        phone: "+1234567900",
+        address: "789 University Blvd",
+        specialization: "Machine Learning",
+      },
+      {
+        id: 2,
+        user_id: 2,
+        employee_id: "FAC002",
+        department: "Mathematics",
+        phone: "+1234567901",
+        address: "321 Academic Ave",
+        specialization: "Applied Mathematics",
+      },
+    ];
+    return {
+      success: true,
+      data: mockFaculty,
+    };
+  },
+
+  async adminCreateStudent(data: Partial<Student>): Promise<ApiResponse<Student>> {
+    // Mock create student
+    return {
+      success: true,
+      data: { ...data, id: Date.now() } as Student,
+    };
+  },
+
+  async adminUpdateStudent(id: string, data: Partial<Student>): Promise<ApiResponse<Student>> {
+    // Mock update student
+    return {
+      success: true,
+      data: { ...data, id: parseInt(id) } as Student,
+    };
+  },
+
+  async adminDeleteStudent(id: string): Promise<ApiResponse<void>> {
+    // Mock delete student
+    return {
+      success: true,
+      data: undefined as any,
+    };
+  },
+
+  async adminResetStudentPassword(id: string): Promise<ApiResponse<void>> {
+    // Mock reset password
+    return {
+      success: true,
+      data: undefined as any,
+    };
+  },
+
+  async adminCreateFaculty(data: Partial<Faculty>): Promise<ApiResponse<Faculty>> {
+    // Mock create faculty
+    return {
+      success: true,
+      data: { ...data, id: Date.now() } as Faculty,
+    };
+  },
+
+  async adminUpdateFaculty(id: string, data: Partial<Faculty>): Promise<ApiResponse<Faculty>> {
+    // Mock update faculty
+    return {
+      success: true,
+      data: { ...data, id: parseInt(id) } as Faculty,
+    };
+  },
+
+  async adminDeleteFaculty(id: string): Promise<ApiResponse<void>> {
+    // Mock delete faculty
+    return {
+      success: true,
+      data: undefined as any,
+    };
+  },
+
+  async adminResetFacultyPassword(id: string): Promise<ApiResponse<void>> {
+    // Mock reset password
+    return {
+      success: true,
+      data: undefined as any,
+    };
+  },
 };
