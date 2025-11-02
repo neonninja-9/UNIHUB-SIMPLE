@@ -13,27 +13,29 @@ const attendanceStatuses = ["present", "absent", "late"];
 
 export function AttendanceWidget() {
   const today = new Date().toISOString().split("T")[0];
-  const [students, setStudents] = useState<Student[]>(() => {
-    const stored = localStorage.getItem("attendance_students");
-    if (stored) {
+  const [students, setStudents] = useState<Student[]>([]);
+  const [attendance, setAttendance] = useState<{ [studentId: string]: string }>({});
+
+  // Load data from localStorage after component mounts
+  useEffect(() => {
+    const storedStudents = localStorage.getItem("attendance_students");
+    if (storedStudents) {
       try {
-        const parsed = JSON.parse(stored);
-        return parsed.map((s: any) => ({
+        const parsed = JSON.parse(storedStudents);
+        setStudents(parsed.map((s: any) => ({
           ...s,
           descriptor: new Float32Array(s.descriptor),
-        }));
+        })));
       } catch (e) {
         console.error("Error parsing stored students:", e);
-        return [];
       }
     }
-    return [];
-  });
 
-  const [attendance, setAttendance] = useState<{ [studentId: string]: string }>(() => {
-    const stored = localStorage.getItem(`attendance_${today}`);
-    return stored ? JSON.parse(stored) : {};
-  });
+    const storedAttendance = localStorage.getItem(`attendance_${today}`);
+    if (storedAttendance) {
+      setAttendance(JSON.parse(storedAttendance));
+    }
+  }, [today]);
 
   const [saved, setSaved] = useState(false);
   const [isFaceRecognitionActive, setIsFaceRecognitionActive] = useState(false);
@@ -94,6 +96,8 @@ export function AttendanceWidget() {
           videoRef.current.onloadedmetadata = resolve;
         }
       });
+
+      if (!videoRef.current) return;
 
       const detections = await faceapi
         .detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions())

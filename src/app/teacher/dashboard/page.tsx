@@ -16,6 +16,7 @@ import { AssignmentsWidget } from "@/components/teacher/dashboard/assignments-wi
 import { AILessonPlanner } from "@/components/teacher/dashboard/ai-lesson-planner";
 import { UpcomingEventsWidget } from "@/components/teacher/dashboard/upcoming-events-widget";
 import { AttendanceWidget } from "@/components/teacher/dashboard/attendance-widget";
+import { ScheduledClassesWidget } from "@/components/teacher/dashboard/scheduled-classes-widget";
 import DigiLockerWidget from "@/components/DigiLockerWidget";
 import { Chatbot } from "@/components/ui/chatbot";
 
@@ -39,6 +40,7 @@ function Dashboard() {
               Welcome back, {mockTeacher.name.split(" ")[1]}!
             </h1>
             <AttendanceWidget />
+            <ScheduledClassesWidget />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <AssignmentsWidget assignments={mockAssignments} />
 
