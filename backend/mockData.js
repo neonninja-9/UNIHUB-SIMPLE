@@ -1,15 +1,56 @@
 module.exports = {
   students: [
-    { id: 1, name: "Alex Doe", email: "alex.doe@unihub.com", role: "student" },
+    { 
+      id: 1, 
+      name: "Alex Doe", 
+      email: "alex.doe@unihub.com", 
+      roll_number: "STU001",
+      class_section: "A",
+      phone: "1234567890",
+      address: "123 Main St",
+      parent_name: "John Doe",
+      parent_phone: "0987654321",
+      enrollment_no: "ENR001",
+      password: "password123",
+      role: "student" 
+    },
     {
       id: 2,
       name: "Jane Smith",
       email: "jane.smith@unihub.com",
+      roll_number: "STU002",
+      class_section: "B",
+      phone: "9876543210",
+      address: "456 Oak Ave",
+      parent_name: "Jane Parent",
+      parent_phone: "0123456789",
+      enrollment_no: "ENR002",
+      password: "password123",
       role: "student",
     },
   ],
   faculty: [
-    { id: 1, name: "Emily Reed", email: "e.reed@unihub.com", role: "faculty" },
+    { 
+      id: 1, 
+      name: "Emily Reed", 
+      email: "e.reed@unihub.com", 
+      employee_id: "EMP001",
+      department: "Computer Science",
+      phone: "5555555555",
+      address: "789 University Blvd",
+      specialization: "Data Structures",
+      password: "password123",
+      role: "faculty" 
+    },
+  ],
+  admins: [
+    { 
+      id: 1, 
+      name: "System Administrator", 
+      email: "admin@unihub.com", 
+      password: "admin123",
+      role: "admin" 
+    },
   ],
   schedules: {
     1: [
