@@ -9,13 +9,14 @@ import {
   mockUpcomingEvents,
 } from "@/lib/mock-data";
 import { ThemeProvider } from "@/hooks/use-theme";
-import { Sidebar } from "@/components/teacher/dashboard/sidebar";
+import { FacultySidebar } from "@/components/faculty/sidebar";
 import { Header } from "@/components/teacher/dashboard/header";
 import { StatCard } from "@/components/teacher/dashboard/stat-card";
 import { AssignmentsWidget } from "@/components/teacher/dashboard/assignments-widget";
 import { AILessonPlanner } from "@/components/teacher/dashboard/ai-lesson-planner";
 import { UpcomingEventsWidget } from "@/components/teacher/dashboard/upcoming-events-widget";
 import { AttendanceWidget } from "@/components/teacher/dashboard/attendance-widget";
+import { ScheduledClassesWidget } from "@/components/teacher/dashboard/scheduled-classes-widget";
 import DigiLockerWidget from "@/components/DigiLockerWidget";
 import { Chatbot } from "@/components/ui/chatbot";
 
@@ -28,7 +29,10 @@ function Dashboard() {
 
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
-      <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+      <FacultySidebar
+        isOpen={sidebarOpen}
+        onToggle={() => setSidebarOpen(!sidebarOpen)}
+      />
 
       <div className="flex-1 flex flex-col overflow-hidden lg:pl-64">
         <Header onMenuClick={() => setSidebarOpen(true)} />
@@ -39,6 +43,7 @@ function Dashboard() {
               Welcome back, {mockTeacher.name.split(" ")[1]}!
             </h1>
             <AttendanceWidget />
+            <ScheduledClassesWidget />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <AssignmentsWidget assignments={mockAssignments} />
 

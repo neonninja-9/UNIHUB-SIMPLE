@@ -223,15 +223,16 @@ export default function AttendancePage() {
 
         <div className="p-4 md:p-6 max-w-7xl mx-auto">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Attendance Overview</h1>
-            <p className="text-gray-600">Track your attendance across all enrolled courses</p>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+              Attendance Overview
+            </h1>
+            <p className="text-gray-600">
+              Track your attendance across all enrolled courses
+            </p>
           </div>
 
           <div className="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow duration-300">
-            <AttendanceChart
-              courses={courses}
-              attendance={attendance}
-            />
+            <AttendanceChart courses={courses} attendance={attendance} />
           </div>
 
           {/* Detailed attendance breakdown */}
@@ -250,26 +251,39 @@ export default function AttendancePage() {
                 : 0;
 
               return (
-                <div key={course.id} className="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow duration-300">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">{course.name}</h3>
+                <div
+                  key={course.id}
+                  className="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow duration-300"
+                >
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                    {course.name}
+                  </h3>
                   <p className="text-sm text-gray-600 mb-4">{course.code}</p>
 
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Total Classes</span>
+                      <span className="text-sm text-gray-600">
+                        Total Classes
+                      </span>
                       <span className="font-medium">{totalClasses}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-green-600">Present</span>
-                      <span className="font-medium text-green-600">{presentClasses}</span>
+                      <span className="font-medium text-green-600">
+                        {presentClasses}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-red-600">Absent</span>
-                      <span className="font-medium text-red-600">{absentClasses}</span>
+                      <span className="font-medium text-red-600">
+                        {absentClasses}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Percentage</span>
-                      <span className="font-medium">{Math.round(percentage)}%</span>
+                      <span className="font-medium">
+                        {Math.round(percentage)}%
+                      </span>
                     </div>
                   </div>
 

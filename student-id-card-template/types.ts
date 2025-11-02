@@ -1,4 +1,3 @@
-
 export interface Student {
   universityName: string;
   universityCampus: string;
@@ -8,7 +7,7 @@ export interface Student {
   branch: string;
   session: string;
   issuingAuthoritySignatureUrl: string;
-  holderSignatureUrl:string;
+  holderSignatureUrl: string;
   enrollmentNo: string;
   dob: string;
   bloodGroup: string;

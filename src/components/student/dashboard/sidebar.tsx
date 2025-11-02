@@ -36,9 +36,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const menuItems = [
     { name: "Home", icon: Home, href: "/student/dashboard", subItems: [] },
-    { name: "Attendance", icon: GraduationCap, href: "/student/attendance", subItems: [] },
+    {
+      name: "Attendance",
+      icon: GraduationCap,
+      href: "/student/attendance",
+      subItems: [],
+    },
     { name: "Courses", icon: BookOpen, href: "/student/courses", subItems: [] },
-    { name: "DigiLocker", icon: FileText, href: "/student/digilocker", subItems: [] },
+    {
+      name: "DigiLocker",
+      icon: FileText,
+      href: "/student/digilocker",
+      subItems: [],
+    },
     {
       name: "General Information",
       icon: Info,
@@ -159,9 +169,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       )}
 
       {/* Sidebar */}
-      <div className={`fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 overflow-y-auto z-30 transform transition-transform duration-300 ${
-        isOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
+      <div
+        className={`fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 overflow-y-auto z-30 transform transition-transform duration-300 ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
         <div className="p-5 bg-blue-600 border-b border-gray-200">
           <h1 className="text-2xl font-bold text-white">UNIHUB</h1>
           <p className="text-blue-100 text-sm mt-1">Student Portal</p>
@@ -196,6 +208,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                           <li
                             key={subItem}
                             className="px-5 py-2 text-gray-600 hover:bg-gray-50 hover:text-blue-600 cursor-pointer transition-colors"
+                            onClick={() => {
+                              if (subItem === "QUERY TO FACULTY") {
+                                router.push("/student/suggestion-box");
+                              }
+                              // Add other sub-item navigation logic here if needed
+                            }}
                           >
                             {subItem}
                           </li>
@@ -215,7 +233,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     <span>{item.name}</span>
                   </button>
                 ) : (
-                  <Link href={item.href || "#"} className={`flex items-center px-5 py-3 text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors ${pathname === item.href ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600' : ''}`}>
+                  <Link
+                    href={item.href || "#"}
+                    className={`flex items-center px-5 py-3 text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors ${pathname === item.href ? "bg-blue-50 text-blue-600 border-r-4 border-blue-600" : ""}`}
+                  >
                     <item.icon className="w-5 h-5 mr-3 text-gray-400" />
                     {item.name}
                   </Link>

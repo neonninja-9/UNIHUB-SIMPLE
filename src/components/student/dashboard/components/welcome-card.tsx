@@ -10,9 +10,7 @@ export function WelcomeCard({ student }: WelcomeCardProps) {
       <h2 className="text-2xl font-bold text-gray-700 mb-2">
         Welcome back, {student?.name || "Student"}! 👋
       </h2>
-      <p className="text-gray-600">
-        Here's your dashboard overview for today.
-      </p>
+      <p className="text-gray-600">Here's your dashboard overview for today.</p>
     </div>
   );
 }

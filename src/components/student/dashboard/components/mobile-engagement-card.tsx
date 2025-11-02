@@ -11,11 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import {
-  Attendance,
-  Course,
-  PendingTask,
-} from "@/lib/types";
+import { Attendance, Course, PendingTask } from "@/lib/types";
 import {
   BarChart2,
   BookOpen,
@@ -41,7 +37,8 @@ const taskIndicatorColors: Record<
   string
 > = {
   low: "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300",
-  medium: "bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300",
+  medium:
+    "bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300",
   high: "bg-rose-100 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300",
 };
 
@@ -201,7 +198,12 @@ function formatDueDate(date: string) {
 }
 
 function TrendingBadge({ percentage }: { percentage: number }) {
-  const status = percentage >= 85 ? "on track" : percentage >= 70 ? "keep pushing" : "needs focus";
+  const status =
+    percentage >= 85
+      ? "on track"
+      : percentage >= 70
+        ? "keep pushing"
+        : "needs focus";
   const colorClasses =
     percentage >= 85
       ? "bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-200"
@@ -214,9 +216,7 @@ function TrendingBadge({ percentage }: { percentage: number }) {
       className={`inline-flex flex-col items-end rounded-2xl px-3 py-2 text-xs font-semibold uppercase tracking-wide ${colorClasses}`}
     >
       <span>{percentage}%</span>
-      <span className="text-[10px] font-medium tracking-[0.2em]">
-        {status}
-      </span>
+      <span className="text-[10px] font-medium tracking-[0.2em]">{status}</span>
     </span>
   );
 }
@@ -243,7 +243,10 @@ function AttendanceSection({
       <div className="h-48">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.25)" />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="rgba(148, 163, 184, 0.25)"
+            />
             <XAxis
               dataKey="name"
               tick={{ fill: "#64748b", fontSize: 12 }}
@@ -261,9 +264,19 @@ function AttendanceSection({
               cursor={{ fill: "rgba(59, 130, 246, 0.08)" }}
               contentStyle={tooltipStyles}
             />
-            <Bar dataKey="percentage" radius={[12, 12, 12, 12]} fill="url(#attendanceGradient)" />
+            <Bar
+              dataKey="percentage"
+              radius={[12, 12, 12, 12]}
+              fill="url(#attendanceGradient)"
+            />
             <defs>
-              <linearGradient id="attendanceGradient" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient
+                id="attendanceGradient"
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
                 <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.95} />
                 <stop offset="95%" stopColor="#6366f1" stopOpacity={0.85} />
               </linearGradient>
@@ -328,7 +341,9 @@ function PendingTasksSection({
               <p className="text-sm font-semibold text-gray-900 dark:text-white">
                 {task.title}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{task.course}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {task.course}
+              </p>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                 <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">
                   <CalendarDays className="h-3 w-3" />
@@ -385,7 +400,9 @@ function CoursesSection({
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">
                   {course.name}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{course.code}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {course.code}
+                </p>
               </div>
               <span className="text-xs font-semibold text-blue-500 dark:text-blue-300">
                 {course.attendancePercentage}%

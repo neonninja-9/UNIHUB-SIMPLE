@@ -1,5 +1,5 @@
 interface QuickLinksProps {
-  onLinkClick?: (link: string) => void
+  onLinkClick?: (link: string) => void;
 }
 
 export function QuickLinks({ onLinkClick }: QuickLinksProps) {
@@ -10,25 +10,25 @@ export function QuickLinks({ onLinkClick }: QuickLinksProps) {
       </h3>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <button
-          onClick={() => onLinkClick?.('Library')}
+          onClick={() => onLinkClick?.("Library")}
           className="bg-blue-600 hover:bg-blue-700 dark:bg-[#3b82f6] dark:hover:bg-[#2563eb] rounded-lg py-3 px-4 text-sm font-medium transition-all duration-200 hover:scale-105 text-white dark:text-white"
         >
           Library
         </button>
         <button
-          onClick={() => onLinkClick?.('Assignments')}
+          onClick={() => onLinkClick?.("Assignments")}
           className="bg-purple-600 hover:bg-purple-700 dark:bg-[#8b5cf6] dark:hover:bg-[#7c3aed] rounded-lg py-3 px-4 text-sm font-medium transition-all duration-200 hover:scale-105 text-white dark:text-white"
         >
           Assignments
         </button>
         <button
-          onClick={() => onLinkClick?.('Exams')}
+          onClick={() => onLinkClick?.("Exams")}
           className="bg-pink-600 hover:bg-pink-700 dark:bg-[#ec4899] dark:hover:bg-[#db2777] rounded-lg py-3 px-4 text-sm font-medium transition-all duration-200 hover:scale-105 text-white dark:text-white"
         >
           Exams
         </button>
         <button
-          onClick={() => onLinkClick?.('Results')}
+          onClick={() => onLinkClick?.("Results")}
           className="bg-green-600 hover:bg-green-700 dark:bg-[#10b981] dark:hover:bg-[#059669] rounded-lg py-3 px-4 text-sm font-medium transition-all duration-200 hover:scale-105 text-white dark:text-white"
         >
           Results

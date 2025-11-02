@@ -44,7 +44,7 @@ export default function StudentDashboard() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pendingTasks, setPendingTasks] = useState<PendingTask[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showIDCardModal, setShowIDCardModal] = useState(false);
@@ -457,22 +457,30 @@ export default function StudentDashboard() {
     setRefreshing(true);
     try {
       // Re-fetch data
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
       const [courseRes, gradesRes] = await Promise.all([
         api.getCourses(),
-        api.getStudentResults(user.id)
+        api.getStudentResults(user.id),
       ]);
 
-      const coursesData = ((courseRes && (courseRes as any).data) ? (courseRes as any).data : courseRes) as Course[] || [];
+      const coursesData =
+        ((courseRes && (courseRes as any).data
+          ? (courseRes as any).data
+          : courseRes) as Course[]) || [];
       setCourses(coursesData);
-      const gradesData = (gradesRes && (gradesRes as any).data) ? (gradesRes as any).data : gradesRes || [];
+      const gradesData =
+        gradesRes && (gradesRes as any).data
+          ? (gradesRes as any).data
+          : gradesRes || [];
       setGrades(gradesData);
 
-      const attendancePromises = coursesData.map(course =>
-        api.getStudentAttendance(user.id, course.id)
+      const attendancePromises = coursesData.map((course) =>
+        api.getStudentAttendance(user.id, course.id),
       );
       const attendanceResults = await Promise.all(attendancePromises);
-      const allAttendance = attendanceResults.flatMap((res: any) => (res && res.data) ? res.data : res || []);
+      const allAttendance = attendanceResults.flatMap((res: any) =>
+        res && res.data ? res.data : res || [],
+      );
       setAttendance(allAttendance as Attendance[]);
 
       toast({
@@ -505,9 +513,10 @@ export default function StudentDashboard() {
     });
   };
 
-  const filteredCourses = courses.filter(course =>
-    course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    course.code.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredCourses = courses.filter(
+    (course) =>
+      course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      course.code.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   if (loading) {
@@ -558,7 +567,9 @@ export default function StudentDashboard() {
                 grades={grades}
                 attendance={attendance}
                 courses={courses}
-                onStatClick={(stat) => toast({ title: stat, description: `Viewing ${stat} details` })}
+                onStatClick={(stat) =>
+                  toast({ title: stat, description: `Viewing ${stat} details` })
+                }
               />
               <AttendanceChart
                 courses={filteredCourses}

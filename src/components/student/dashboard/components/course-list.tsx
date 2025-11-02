@@ -7,7 +7,11 @@ interface CourseListProps {
   onCourseClick?: (course: Course) => void;
 }
 
-export function CourseList({ courses, attendance, onCourseClick }: CourseListProps) {
+export function CourseList({
+  courses,
+  attendance,
+  onCourseClick,
+}: CourseListProps) {
   return (
     <div>
       <h3 className="text-xl font-bold mb-4 text-gray-700">My Courses</h3>

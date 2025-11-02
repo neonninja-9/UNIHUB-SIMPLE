@@ -52,12 +52,15 @@ export function Chatbot({ userType, userData }: ChatbotProps) {
           return `Your next class is "${courses[0].title}" (${courses[0].code}) with ${courses[0].teacher} at ${courses[0].nextAssignmentDue}.`;
         }
         if (lowerQuery.includes("all") || lowerQuery.includes("list")) {
-          return `You are enrolled in: ${courses.map(c => `${c.title} (${c.code})`).join(", ")}.`;
+          return `You are enrolled in: ${courses.map((c) => `${c.title} (${c.code})`).join(", ")}.`;
         }
-        return `You have ${courses.length} courses this semester. Your main courses are ${courses.slice(0, 2).map(c => c.title).join(" and ")}.`;
+        return `You have ${courses.length} courses this semester. Your main courses are ${courses
+          .slice(0, 2)
+          .map((c) => c.title)
+          .join(" and ")}.`;
       } else {
         const courses = mockCourses;
-        return `You are teaching ${courses.length} courses: ${courses.map(c => `${c.title} (${c.code})`).join(", ")}.`;
+        return `You are teaching ${courses.length} courses: ${courses.map((c) => `${c.title} (${c.code})`).join(", ")}.`;
       }
     }
 
@@ -68,7 +71,7 @@ export function Chatbot({ userType, userData }: ChatbotProps) {
         if (lowerQuery.includes("due") || lowerQuery.includes("deadline")) {
           return `Your next assignment is "${courses[0].nextAssignment}" for ${courses[0].title}, due ${courses[0].nextAssignmentDue}.`;
         }
-        return `You have assignments in: ${courses.map(c => `${c.title}: ${c.nextAssignment}`).join("; ")}.`;
+        return `You have assignments in: ${courses.map((c) => `${c.title}: ${c.nextAssignment}`).join("; ")}.`;
       } else {
         const assignments = mockAssignments;
         return `You have ${assignments.length} assignments to review. Next due: "${assignments[0].title}" for ${assignments[0].course} (${assignments[0].due}).`;
@@ -79,7 +82,7 @@ export function Chatbot({ userType, userData }: ChatbotProps) {
     if (lowerQuery.includes("grade") || lowerQuery.includes("score")) {
       if (userType === "student") {
         const grades = mockRecentGrades;
-        return `Your recent grades: ${grades.map(g => `${g.course}: ${g.grade}`).join(", ")}.`;
+        return `Your recent grades: ${grades.map((g) => `${g.course}: ${g.grade}`).join(", ")}.`;
       } else {
         return "As a teacher, you can view student grades in the assignments section. Would you like help with grading?";
       }
@@ -99,7 +102,7 @@ export function Chatbot({ userType, userData }: ChatbotProps) {
       if (userType === "student") {
         return "Your classes are: Monday/Wednesday - Physics 9:15 AM, Tuesday/Thursday - Calculus 10:15 AM, and Literature on Friday.";
       } else {
-        return `Your teaching schedule: ${mockCourses.map(c => `${c.title} - ${c.nextClass}`).join("; ")}.`;
+        return `Your teaching schedule: ${mockCourses.map((c) => `${c.title} - ${c.nextClass}`).join("; ")}.`;
       }
     }
 
@@ -110,27 +113,27 @@ export function Chatbot({ userType, userData }: ChatbotProps) {
 
     // For other queries, use Gemini API via Python script
     try {
-      const response = await fetch('http://localhost:3002/api/chat', {
-        method: 'POST',
+      const response = await fetch("http://localhost:3002/api/chat", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          message: query
-        })
+          message: query,
+        }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        if (data.status === 'success') {
+        if (data.status === "success") {
           return data.response;
         } else {
           return `Error: ${data.error}`;
         }
       }
     } catch (error) {
-      console.error('Chat API error:', error);
-      return 'Sorry, I am unable to respond right now.';
+      console.error("Chat API error:", error);
+      return "Sorry, I am unable to respond right now.";
     }
 
     // Fallback responses if API fails
@@ -140,7 +143,9 @@ export function Chatbot({ userType, userData }: ChatbotProps) {
       "Feel free to ask me about your schedule, attendance, or any course-related questions!",
     ];
 
-    return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+    return defaultResponses[
+      Math.floor(Math.random() * defaultResponses.length)
+    ];
   };
 
   const handleSendMessage = async () => {
@@ -153,7 +158,7 @@ export function Chatbot({ userType, userData }: ChatbotProps) {
       timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     const currentInput = inputValue;
     setInputValue("");
     setIsTyping(true);
@@ -168,16 +173,16 @@ export function Chatbot({ userType, userData }: ChatbotProps) {
         timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, botMessage]);
+      setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
-      console.error('Error generating response:', error);
+      console.error("Error generating response:", error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: "Sorry, I'm having trouble responding right now. Please try again.",
         sender: "bot",
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsTyping(false);
     }
@@ -267,8 +272,14 @@ export function Chatbot({ userType, userData }: ChatbotProps) {
                   <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
                     <div className="flex space-x-1">
                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.1s" }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.2s" }}
+                      ></div>
                     </div>
                   </div>
                 </div>

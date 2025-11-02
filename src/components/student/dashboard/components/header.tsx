@@ -73,7 +73,9 @@ export function DashboardHeader({
             disabled={refreshing}
             className="p-2 hover:bg-gray-800 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-gray-200 transition-colors"
           >
-            <RefreshCw className={`w-5 h-5 text-gray-400 dark:text-gray-600 ${refreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`w-5 h-5 text-gray-400 dark:text-gray-600 ${refreshing ? "animate-spin" : ""}`}
+            />
           </button>
           <button
             onClick={() => setDarkMode?.(!darkMode)}

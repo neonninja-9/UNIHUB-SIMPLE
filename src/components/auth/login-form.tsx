@@ -257,7 +257,11 @@ export default function LoginForm() {
       const role = loginType === "student" ? "student" : "faculty";
 
       // Mock login for demo purposes - bypass API call
-      if (username === "student" && password === "password" && role === "student") {
+      if (
+        username === "student" &&
+        password === "password" &&
+        role === "student"
+      ) {
         const mockUser = {
           id: 1,
           username: "student",
@@ -267,7 +271,11 @@ export default function LoginForm() {
         };
         localStorage.setItem("user", JSON.stringify(mockUser));
         router.push("/student/dashboard");
-      } else if (username === "faculty" && password === "password" && role === "faculty") {
+      } else if (
+        username === "faculty" &&
+        password === "password" &&
+        role === "faculty"
+      ) {
         const mockUser = {
           id: 2,
           username: "faculty",
@@ -278,7 +286,9 @@ export default function LoginForm() {
         localStorage.setItem("user", JSON.stringify(mockUser));
         router.push("/teacher/dashboard");
       } else {
-        setErrors({ auth: "Invalid credentials. Try student/password or faculty/password" });
+        setErrors({
+          auth: "Invalid credentials. Try student/password or faculty/password",
+        });
       }
     } catch (error) {
       setErrors({ auth: "Login failed. Please try again." });

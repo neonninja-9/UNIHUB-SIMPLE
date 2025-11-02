@@ -10,7 +10,12 @@ interface StatsCardsProps {
   onStatClick?: (statType: string) => void;
 }
 
-export function StatsCards({ grades, attendance, courses, onStatClick }: StatsCardsProps) {
+export function StatsCards({
+  grades,
+  attendance,
+  courses,
+  onStatClick,
+}: StatsCardsProps) {
   const calculateGPA = () => {
     const completedGrades = grades.filter((g) => g.marks_obtained !== null);
     const totalPoints = completedGrades.reduce((sum, grade) => {
@@ -49,7 +54,7 @@ export function StatsCards({ grades, attendance, courses, onStatClick }: StatsCa
         iconBg="bg-green-500/20"
         label="CGPA"
         value={calculateGPA()}
-        onClick={() => onStatClick?.('CGPA')}
+        onClick={() => onStatClick?.("CGPA")}
       />
 
       <StatCard
@@ -57,7 +62,7 @@ export function StatsCards({ grades, attendance, courses, onStatClick }: StatsCa
         iconBg="bg-blue-500/20"
         label="Attendance"
         value={calculateAttendance()}
-        onClick={() => onStatClick?.('Attendance')}
+        onClick={() => onStatClick?.("Attendance")}
       />
 
       <StatCard
@@ -65,7 +70,7 @@ export function StatsCards({ grades, attendance, courses, onStatClick }: StatsCa
         iconBg="bg-purple-500/20"
         label="Pending Tasks"
         value={pendingTasks}
-        onClick={() => onStatClick?.('Pending Tasks')}
+        onClick={() => onStatClick?.("Pending Tasks")}
       />
 
       <StatCard
@@ -73,7 +78,7 @@ export function StatsCards({ grades, attendance, courses, onStatClick }: StatsCa
         iconBg="bg-yellow-500/20"
         label="Courses"
         value={courses.length}
-        onClick={() => onStatClick?.('Courses')}
+        onClick={() => onStatClick?.("Courses")}
       />
     </div>
   );

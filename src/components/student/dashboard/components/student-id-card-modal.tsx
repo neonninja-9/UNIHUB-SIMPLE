@@ -3,7 +3,15 @@
 import React, { useRef } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { X, Download, Phone, Calendar, Droplet, User, MapPin } from "lucide-react";
+import {
+  X,
+  Download,
+  Phone,
+  Calendar,
+  Droplet,
+  User,
+  MapPin,
+} from "lucide-react";
 
 interface StudentIDCardModalProps {
   isOpen: boolean;
@@ -21,7 +29,11 @@ interface StudentIDCardModalProps {
   };
 }
 
-export function StudentIDCardModal({ isOpen, onClose, student }: StudentIDCardModalProps) {
+export function StudentIDCardModal({
+  isOpen,
+  onClose,
+  student,
+}: StudentIDCardModalProps) {
   const cardRef = useRef<HTMLDivElement>(null);
 
   const downloadPDF = async () => {
@@ -32,14 +44,14 @@ export function StudentIDCardModal({ isOpen, onClose, student }: StudentIDCardMo
         scale: 2,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: '#ffffff',
+        backgroundColor: "#ffffff",
       });
 
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
       });
 
       const imgWidth = 210;
@@ -49,19 +61,19 @@ export function StudentIDCardModal({ isOpen, onClose, student }: StudentIDCardMo
 
       let position = 0;
 
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
 
       while (heightLeft >= 0) {
         position = heightLeft - imgHeight;
         pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
         heightLeft -= pageHeight;
       }
 
-      pdf.save(`Student_ID_Card_${student.name.replace(/\s+/g, '_')}.pdf`);
+      pdf.save(`Student_ID_Card_${student.name.replace(/\s+/g, "_")}.pdf`);
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      console.error("Error generating PDF:", error);
     }
   };
 
@@ -86,7 +98,7 @@ export function StudentIDCardModal({ isOpen, onClose, student }: StudentIDCardMo
           <div
             ref={cardRef}
             className="bg-gradient-to-br from-blue-600 to-purple-700 rounded-xl p-6 text-white shadow-lg"
-            style={{ minHeight: '400px' }}
+            style={{ minHeight: "400px" }}
           >
             {/* Header with Logo and Institution */}
             <div className="flex justify-between items-start mb-6">
@@ -104,7 +116,9 @@ export function StudentIDCardModal({ isOpen, onClose, student }: StudentIDCardMo
                   )}
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold">{student.institution_name}</h3>
+                  <h3 className="text-lg font-bold">
+                    {student.institution_name}
+                  </h3>
                   <p className="text-sm opacity-90">Student ID Card</p>
                 </div>
               </div>
@@ -152,7 +166,9 @@ export function StudentIDCardModal({ isOpen, onClose, student }: StudentIDCardMo
                 <div className="flex items-center space-x-3 mb-2">
                   <Phone size={18} className="opacity-80" />
                   <div>
-                    <p className="text-xs opacity-80">In Case of Emergency, Please Call:</p>
+                    <p className="text-xs opacity-80">
+                      In Case of Emergency, Please Call:
+                    </p>
                     <p className="font-semibold">{student.phone}</p>
                   </div>
                 </div>

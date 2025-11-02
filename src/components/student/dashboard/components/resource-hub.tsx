@@ -73,14 +73,20 @@ export function ResourceHub() {
   const [selectedSubject, setSelectedSubject] = useState("All");
   const [selectedType, setSelectedType] = useState("All");
 
-  const subjects = ["All", ...Array.from(new Set(mockResources.map(r => r.subject)))];
+  const subjects = [
+    "All",
+    ...Array.from(new Set(mockResources.map((r) => r.subject))),
+  ];
   const types = ["All", "question-paper", "notes", "syllabus"];
 
-  const filteredResources = mockResources.filter(resource => {
-    const matchesSearch = resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         resource.subject.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSubject = selectedSubject === "All" || resource.subject === selectedSubject;
-    const matchesType = selectedType === "All" || resource.type === selectedType;
+  const filteredResources = mockResources.filter((resource) => {
+    const matchesSearch =
+      resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      resource.subject.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSubject =
+      selectedSubject === "All" || resource.subject === selectedSubject;
+    const matchesType =
+      selectedType === "All" || resource.type === selectedType;
 
     return matchesSearch && matchesSubject && matchesType;
   });
@@ -136,8 +142,12 @@ export function ResourceHub() {
             onChange={(e) => setSelectedSubject(e.target.value)}
             className="px-3 py-2 bg-[#0F1419] dark:bg-gray-100 border border-gray-600 dark:border-gray-300 rounded-lg text-white dark:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {subjects.map(subject => (
-              <option key={subject} value={subject} className="bg-[#0F1419] dark:bg-gray-100 text-white dark:text-gray-900">
+            {subjects.map((subject) => (
+              <option
+                key={subject}
+                value={subject}
+                className="bg-[#0F1419] dark:bg-gray-100 text-white dark:text-gray-900"
+              >
                 {subject}
               </option>
             ))}
@@ -148,8 +158,12 @@ export function ResourceHub() {
             onChange={(e) => setSelectedType(e.target.value)}
             className="px-3 py-2 bg-[#0F1419] dark:bg-gray-100 border border-gray-600 dark:border-gray-300 rounded-lg text-white dark:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {types.map(type => (
-              <option key={type} value={type} className="bg-[#0F1419] dark:bg-gray-100 text-white dark:text-gray-900">
+            {types.map((type) => (
+              <option
+                key={type}
+                value={type}
+                className="bg-[#0F1419] dark:bg-gray-100 text-white dark:text-gray-900"
+              >
                 {type === "All" ? "All Types" : getTypeLabel(type)}
               </option>
             ))}

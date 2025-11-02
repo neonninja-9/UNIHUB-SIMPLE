@@ -51,13 +51,16 @@ export function AttendanceModal({
   };
 
   // Group attendance by course
-  const groupedAttendance = attendance.reduce((acc, record) => {
-    if (!acc[record.course_id]) {
-      acc[record.course_id] = [];
-    }
-    acc[record.course_id].push(record);
-    return acc;
-  }, {} as Record<number, Attendance[]>);
+  const groupedAttendance = attendance.reduce(
+    (acc, record) => {
+      if (!acc[record.course_id]) {
+        acc[record.course_id] = [];
+      }
+      acc[record.course_id].push(record);
+      return acc;
+    },
+    {} as Record<number, Attendance[]>,
+  );
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -88,7 +91,7 @@ export function AttendanceModal({
                 const courseName = getCourseName(Number(courseId));
                 const totalClasses = records.length;
                 const presentClasses = records.filter(
-                  (r) => r.status === "present"
+                  (r) => r.status === "present",
                 ).length;
                 const attendancePercentage = totalClasses
                   ? Math.round((presentClasses / totalClasses) * 100)
@@ -115,7 +118,11 @@ export function AttendanceModal({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {records
-                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                        .sort(
+                          (a, b) =>
+                            new Date(b.date).getTime() -
+                            new Date(a.date).getTime(),
+                        )
                         .map((record) => (
                           <div
                             key={record.id}
@@ -127,8 +134,11 @@ export function AttendanceModal({
                                 <div className="text-sm font-medium text-gray-900 dark:text-white">
                                   {new Date(record.date).toLocaleDateString()}
                                 </div>
-                                <div className={`text-xs px-2 py-1 rounded-full ${getStatusColor(record.status)}`}>
-                                  {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                                <div
+                                  className={`text-xs px-2 py-1 rounded-full ${getStatusColor(record.status)}`}
+                                >
+                                  {record.status.charAt(0).toUpperCase() +
+                                    record.status.slice(1)}
                                 </div>
                               </div>
                             </div>
