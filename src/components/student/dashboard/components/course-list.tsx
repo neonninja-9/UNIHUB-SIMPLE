@@ -4,9 +4,10 @@ import { Course, Attendance } from "@/lib/types";
 interface CourseListProps {
   courses: Course[];
   attendance: Attendance[];
+  onCourseClick?: (course: Course) => void;
 }
 
-export function CourseList({ courses, attendance }: CourseListProps) {
+export function CourseList({ courses, attendance, onCourseClick }: CourseListProps) {
   return (
     <div>
       <h3 className="text-xl font-bold mb-4">My Courses</h3>
@@ -40,7 +41,8 @@ export function CourseList({ courses, attendance }: CourseListProps) {
           return (
             <div
               key={courseId}
-              className={`bg-gradient-to-br ${colorClass} rounded-xl p-6`}
+              className={`bg-gradient-to-br ${colorClass} rounded-xl p-6 cursor-pointer hover:scale-105 transition-all duration-200 hover:shadow-xl`}
+              onClick={() => onCourseClick?.(course)}
             >
               <div className="flex items-center justify-between mb-4">
                 <BookOpen className="w-6 h-6" />
@@ -56,7 +58,7 @@ export function CourseList({ courses, attendance }: CourseListProps) {
                 </div>
                 <div className="w-full bg-white/20 rounded-full h-2">
                   <div
-                    className="bg-white rounded-full h-2"
+                    className="bg-white rounded-full h-2 transition-all duration-300"
                     style={{ width: `${progress}%` }}
                   ></div>
                 </div>

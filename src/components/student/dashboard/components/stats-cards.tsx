@@ -7,11 +7,10 @@ interface StatsCardsProps {
   grades: Grade[];
   attendance: Attendance[];
   courses: Course[];
+  onStatClick?: (statType: string) => void;
 }
 
-export function StatsCards({ grades, attendance, courses }: StatsCardsProps) {
-  const [showCGPAGraph, setShowCGPAGraph] = useState(false);
-
+export function StatsCards({ grades, attendance, courses, onStatClick }: StatsCardsProps) {
   const calculateGPA = () => {
     const completedGrades = grades.filter((g) => g.marks_obtained !== null);
     const totalPoints = completedGrades.reduce((sum, grade) => {
@@ -44,22 +43,21 @@ export function StatsCards({ grades, attendance, courses }: StatsCardsProps) {
   const pendingTasks = grades.filter((g) => g.marks_obtained === null).length;
 
   return (
-    <>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          icon={<BookOpen className="w-5 h-5 text-green-400" />}
-          iconBg="bg-green-500/20"
-          label="CGPA"
-          value={calculateGPA()}
-          onClick={() => setShowCGPAGraph(true)}
-          clickable={true}
-        />
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <StatCard
+        icon={<BookOpen className="w-5 h-5 text-green-400" />}
+        iconBg="bg-green-500/20"
+        label="CGPA"
+        value={calculateGPA()}
+        onClick={() => onStatClick?.('CGPA')}
+      />
 
       <StatCard
         icon={<Users className="w-5 h-5 text-blue-400" />}
         iconBg="bg-blue-500/20"
         label="Attendance"
         value={calculateAttendance()}
+        onClick={() => onStatClick?.('Attendance')}
       />
 
       <StatCard
@@ -67,20 +65,17 @@ export function StatsCards({ grades, attendance, courses }: StatsCardsProps) {
         iconBg="bg-purple-500/20"
         label="Pending Tasks"
         value={pendingTasks}
+        onClick={() => onStatClick?.('Pending Tasks')}
       />
 
-        <StatCard
-          icon={<Award className="w-5 h-5 text-yellow-400" />}
-          iconBg="bg-yellow-500/20"
-          label="Courses"
-          value={courses.length}
-        />
-      </div>
-
-      {showCGPAGraph && (
-        <CGPAGraph onClose={() => setShowCGPAGraph(false)} />
-      )}
-    </>
+      <StatCard
+        icon={<Award className="w-5 h-5 text-yellow-400" />}
+        iconBg="bg-yellow-500/20"
+        label="Courses"
+        value={courses.length}
+        onClick={() => onStatClick?.('Courses')}
+      />
+    </div>
   );
 }
 
@@ -90,15 +85,12 @@ interface StatCardProps {
   label: string;
   value: string | number;
   onClick?: () => void;
-  clickable?: boolean;
 }
 
-function StatCard({ icon, iconBg, label, value, onClick, clickable }: StatCardProps) {
+function StatCard({ icon, iconBg, label, value, onClick }: StatCardProps) {
   return (
     <div
-      className={`bg-[#1A1F3A] dark:bg-white rounded-xl p-5 shadow-lg dark:shadow-[0_4px_12px_rgba(0,0,0,0.08)] ${
-        clickable ? "cursor-pointer hover:bg-[#2A2F4A] dark:hover:bg-gray-50 transition-colors" : ""
-      }`}
+      className="bg-[#1A1F3A] dark:bg-white rounded-xl p-5 shadow-lg dark:shadow-[0_4px_12px_rgba(0,0,0,0.08)] cursor-pointer hover:scale-105 transition-all duration-200 hover:shadow-xl"
       onClick={onClick}
     >
       <div className="flex items-center gap-3 mb-2">

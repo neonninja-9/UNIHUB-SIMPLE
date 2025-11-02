@@ -1,4 +1,4 @@
-import { Search, Bell, Moon, Menu, Sun } from "lucide-react";
+import { Search, Bell, Moon, Menu, Sun, RefreshCw } from "lucide-react";
 import { Student } from "@/lib/types";
 import { useTheme } from "@/hooks/use-theme";
 
@@ -6,12 +6,20 @@ interface HeaderProps {
   student?: Student;
   onMenuClick: () => void;
   sidebarOpen: boolean;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }
 
 export function DashboardHeader({
   student,
   onMenuClick,
   sidebarOpen,
+  searchQuery = "",
+  onSearchChange,
+  onRefresh,
+  refreshing = false,
 }: HeaderProps) {
   const { darkMode, setDarkMode } = useTheme();
 
@@ -42,13 +50,22 @@ export function DashboardHeader({
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 dark:text-gray-600" />
             <input
               type="text"
-              placeholder="Search..."
-              className="w-full bg-[#0A0E27] border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 dark:bg-white dark:border-gray-300 dark:text-gray-900 dark:placeholder-gray-500"
+              placeholder="Search courses..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange?.(e.target.value)}
+              className="w-full bg-[#0A0E27] border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors dark:bg-white dark:border-gray-300 dark:text-gray-900 dark:placeholder-gray-500"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-4">
+          <button
+            onClick={onRefresh}
+            disabled={refreshing}
+            className="p-2 hover:bg-gray-800 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-gray-200 transition-colors"
+          >
+            <RefreshCw className={`w-5 h-5 text-gray-400 dark:text-gray-600 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
           <button
             onClick={() => setDarkMode?.(!darkMode)}
             className="p-2 hover:bg-gray-800 rounded-lg dark:hover:bg-gray-200"
@@ -62,7 +79,7 @@ export function DashboardHeader({
               <Moon className="w-5 h-5 text-gray-400 dark:text-gray-600" />
             )}
           </button>
-          <button className="p-2 hover:bg-gray-800 rounded-lg relative dark:hover:bg-gray-200">
+          <button className="p-2 hover:bg-gray-800 rounded-lg relative dark:hover:bg-gray-200 transition-colors">
             <Bell className="w-5 h-5 text-gray-400 dark:text-gray-600" />
             <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
           </button>

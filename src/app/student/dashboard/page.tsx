@@ -7,7 +7,8 @@ import {
   mockStudentCourses,
   mockRecentGrades,
 } from "@/lib/student-mock-data";
-import { Attendance, PendingTask } from "@/lib/types";
+import { Attendance, Student, Course, Grade, PendingTask } from "@/lib/types";
+import { api } from "@/lib/api";
 import { Sidebar } from "@/components/student/dashboard/sidebar";
 import {
   WelcomeCard,
@@ -23,6 +24,9 @@ import {
 import { DashboardHeader } from "@/components/student/dashboard/components/header";
 import DigiLockerWidget from "@/components/DigiLockerWidget";
 import { Chatbot } from "@/components/ui/chatbot";
+import { useToast } from "@/hooks/use-toast";
+import { CourseList } from "@/components/student/dashboard/components/course-list";
+import { StudentIDCardModal } from "@/components/student/dashboard/components/student-id-card-modal";
 
 // Loading component
 const LoadingSpinner = () => (
@@ -33,18 +37,24 @@ const LoadingSpinner = () => (
 
 export default function StudentDashboard() {
   const router = useRouter();
-  const [student, setStudent] = useState<any>(null);
-  const [courses, setCourses] = useState<any[]>([]);
+  const { toast } = useToast();
+  const [student, setStudent] = useState<Student | null>(null);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
-  const [grades, setGrades] = useState<any[]>([]);
+  const [grades, setGrades] = useState<Grade[]>([]);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pendingTasks, setPendingTasks] = useState<PendingTask[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [showIDCardModal, setShowIDCardModal] = useState(false);
 
   useEffect(() => {
     // Instead of fetching from API, use mock data
     setStudent({
       id: 1,
+      user_id: 1,
       ...mockStudent,
       roll_number: "S101",
       class_section: "A",
@@ -59,7 +69,6 @@ export default function StudentDashboard() {
         id: 1,
         code: "PHYS 301",
         name: "Modern Physics",
-        teacher: "Dr. Evelyn Reed",
         schedule: "Mon,Wed 09:15-10:10",
         classroom: "B201",
         credits: 3,
@@ -72,7 +81,6 @@ export default function StudentDashboard() {
         id: 2,
         code: "MATH 102",
         name: "Calculus II",
-        teacher: "Dr. Alan Grant",
         schedule: "Tue,Thu 10:15-11:10",
         classroom: "A101",
         credits: 4,
@@ -85,7 +93,6 @@ export default function StudentDashboard() {
         id: 3,
         code: "ENGL 110",
         name: "Intro to Literature",
-        teacher: "Prof. Eleanor Vance",
         schedule: "Mon,Wed,Fri 11:15-12:10",
         classroom: "C301",
         credits: 3,
@@ -98,7 +105,6 @@ export default function StudentDashboard() {
         id: 4,
         code: "CHEM 201",
         name: "Organic Chemistry",
-        teacher: "Dr. Robert Chen",
         schedule: "Tue,Thu 13:15-14:10",
         classroom: "D201",
         credits: 4,
@@ -111,7 +117,6 @@ export default function StudentDashboard() {
         id: 5,
         code: "CS 101",
         name: "Introduction to Programming",
-        teacher: "Prof. Sarah Johnson",
         schedule: "Mon,Wed 14:15-15:10",
         classroom: "E101",
         credits: 3,
@@ -124,7 +129,6 @@ export default function StudentDashboard() {
         id: 6,
         code: "BIO 150",
         name: "Biology Fundamentals",
-        teacher: "Dr. Michael Davis",
         schedule: "Tue,Thu,Fri 09:15-10:10",
         classroom: "F201",
         credits: 3,
@@ -137,7 +141,6 @@ export default function StudentDashboard() {
         id: 7,
         code: "HIST 205",
         name: "World History",
-        teacher: "Prof. Lisa Wong",
         schedule: "Mon,Wed 15:15-16:10",
         classroom: "G301",
         credits: 3,
@@ -150,7 +153,6 @@ export default function StudentDashboard() {
         id: 8,
         code: "ECON 101",
         name: "Principles of Economics",
-        teacher: "Dr. James Wilson",
         schedule: "Tue,Thu 11:15-12:10",
         classroom: "H101",
         credits: 3,
@@ -163,7 +165,6 @@ export default function StudentDashboard() {
         id: 9,
         code: "PSY 200",
         name: "Psychology",
-        teacher: "Dr. Amanda Taylor",
         schedule: "Mon,Fri 10:15-11:10",
         classroom: "I201",
         credits: 3,
@@ -176,7 +177,6 @@ export default function StudentDashboard() {
         id: 10,
         code: "ART 110",
         name: "Digital Art",
-        teacher: "Prof. David Brown",
         schedule: "Wed,Fri 13:15-14:10",
         classroom: "J101",
         credits: 2,
@@ -189,7 +189,6 @@ export default function StudentDashboard() {
         id: 11,
         code: "MUS 120",
         name: "Music Theory",
-        teacher: "Dr. Jennifer Lee",
         schedule: "Tue,Thu 15:15-16:10",
         classroom: "K201",
         credits: 2,
@@ -202,7 +201,6 @@ export default function StudentDashboard() {
         id: 12,
         code: "PHIL 150",
         name: "Introduction to Philosophy",
-        teacher: "Prof. Thomas Anderson",
         schedule: "Mon,Wed 12:15-13:10",
         classroom: "L301",
         credits: 3,
@@ -450,6 +448,63 @@ export default function StudentDashboard() {
     setLoading(false);
   }, [router]);
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // Re-fetch data
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const [courseRes, gradesRes] = await Promise.all([
+        api.getCourses(),
+        api.getStudentResults(user.id)
+      ]);
+
+      const coursesData = ((courseRes && (courseRes as any).data) ? (courseRes as any).data : courseRes) as Course[] || [];
+      setCourses(coursesData);
+      const gradesData = (gradesRes && (gradesRes as any).data) ? (gradesRes as any).data : gradesRes || [];
+      setGrades(gradesData);
+
+      const attendancePromises = coursesData.map(course =>
+        api.getStudentAttendance(user.id, course.id)
+      );
+      const attendanceResults = await Promise.all(attendancePromises);
+      const allAttendance = attendanceResults.flatMap((res: any) => (res && res.data) ? res.data : res || []);
+      setAttendance(allAttendance as Attendance[]);
+
+      toast({
+        title: "Dashboard refreshed",
+        description: "Your data has been updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh failed",
+        description: "Unable to refresh data. Please try again.",
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleQuickLinkClick = (link: string) => {
+    toast({
+      title: `${link} clicked`,
+      description: `Navigating to ${link}...`,
+    });
+    // Here you would implement actual navigation
+  };
+
+  const handleCourseClick = (course: Course) => {
+    setSelectedCourse(course);
+    toast({
+      title: course.name,
+      description: `Viewing details for ${course.name}`,
+    });
+  };
+
+  const filteredCourses = courses.filter(course =>
+    course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    course.code.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -475,12 +530,18 @@ export default function StudentDashboard() {
   return (
     <div className="min-h-screen bg-[#0A0E27] text-white flex-col flex dark:bg-[#f9fafb] dark:text-gray-900 transition-colors duration-300">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
       <div className="flex-1 w-full">
         <DashboardHeader
           student={student}
           onMenuClick={() => setSidebarOpen(true)}
           sidebarOpen={sidebarOpen}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onRefresh={handleRefresh}
+          refreshing={refreshing}
         />
+
         {/* Responsive Main Content */}
         <div className="p-2 sm:p-4 md:p-6 max-w-full md:max-w-[1600px] mx-auto transition-all duration-300">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -496,12 +557,22 @@ export default function StudentDashboard() {
                 grades={grades}
                 attendance={attendance}
                 courses={courses}
+                onStatClick={(stat) => toast({ title: stat, description: `Viewing ${stat} details` })}
               />
-              <div className="hidden md:block">
-                <AttendanceChart courses={courses} attendance={attendance} />
-              </div>
-              <QuickLinks />
+              <AttendanceChart
+                courses={filteredCourses}
+                attendance={attendance}
+              />
+
+              <CourseList
+                courses={filteredCourses}
+                attendance={attendance}
+                onCourseClick={handleCourseClick}
+              />
+
+              <QuickLinks onLinkClick={handleQuickLinkClick} />
             </div>
+
             {/* Right Sidebar Widgets */}
             <div className="space-y-4 md:space-y-6">
               <Deadlines courses={courses} grades={grades} />
@@ -518,6 +589,12 @@ export default function StudentDashboard() {
         </div>
       </div>
       <Chatbot userType="student" userData={student} />
+      {showIDCardModal && (
+        <StudentIDCardModal
+          student={student}
+          onClose={() => setShowIDCardModal(false)}
+        />
+      )}
     </div>
   );
 }
