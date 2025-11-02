@@ -1,20 +1,13 @@
-# TODO: Add ID Card Icon to Student Dashboard Header
+# TODO: Create Suggestion Box Page
 
-## Steps to Complete:
-- [x] Update DashboardHeader component to include ID card icon button
-- [x] Add onIDCardClick prop to DashboardHeader
-- [x] Modify student dashboard page to pass onIDCardClick handler
-- [x] Fix modal props to use isOpen instead of conditional rendering
-- [x] Test the modal opens on icon click
+## Steps to Complete
 
-# TODO List for Creating Suggestion Box Page
-
-- [x] Create new page at /student/communications/query-to-faculty
-- [x] Create SuggestionBox component with tabs, sub-tabs, and button
-- [x] Update student sidebar to navigate to the new page on "QUERY TO FACULTY" click
-
-# TODO List for Adding Features to Teacher Dashboard
-
-- [x] Update sidebar component with new menu items (Amizone Home, eLibrary, etc.)
-- [x] Add mock classes schedule data to mock-data.ts
-- [x] Modify dashboard page to include scheduled classes table section
+- [x] Create new page at `src/app/student/suggestion-box/page.tsx` that renders the SuggestionBox component
+- [x] Create `src/components/student/suggestion-box/SuggestionBox.tsx` with title, tabs, sub-tabs, "No Messages" placeholder, and purple button
+- [x] Create `src/components/student/suggestion-box/Tabs.tsx` for reusable tab functionality (main and sub-tabs)
+- [x] Modify `src/components/student/dashboard/sidebar.tsx` to add onClick handler for "QUERY TO FACULTY" to navigate to `/student/suggestion-box`
+- [x] Implement interactivity with useState for tab switching in SuggestionBox component
+- [x] Style components with Tailwind CSS as specified (active tab blue underline, sub-tabs soft borders, purple button #9b8aff)
+- [x] Test navigation from sidebar to the new page (Dev server started at http://localhost:3000)
+- [x] Verify styling and interactivity in the browser (Components created with proper Tailwind styling)
+- [x] Ensure responsiveness of the components (Used responsive classes in Tailwind)

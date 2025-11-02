@@ -190,6 +190,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                           <li
                             key={subItem}
                             className="px-5 py-2 text-gray-400 hover:bg-[#1a1f3a] hover:text-white cursor-pointer transition-colors"
+                            onClick={() => {
+                              if (subItem === "QUERY TO FACULTY") {
+                                router.push("/student/suggestion-box");
+                              }
+                              // Add other sub-item navigation logic here if needed
+                            }}
                           >
                             {subItem}
                           </li>
