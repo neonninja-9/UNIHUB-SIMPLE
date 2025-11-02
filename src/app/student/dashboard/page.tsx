@@ -551,7 +551,6 @@ export default function StudentDashboard() {
               <MobileEngagementCard
                 attendance={attendance}
                 courses={courses}
-                pendingTasks={pendingTasks}
               />
               <StatsCards
                 grades={grades}
