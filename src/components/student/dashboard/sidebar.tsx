@@ -2,206 +2,221 @@
 import React, { useState } from "react";
 import {
   Home,
-  Calendar,
-  FileText,
-  Book,
-  ClipboardList,
-  Clock,
-  Users,
-  Calculator,
-  Briefcase,
-  DollarSign,
-  IdCard,
-  MessageSquare,
-  Globe,
-  BookOpen,
+  Info,
   GraduationCap,
-  Wifi,
+  MessageSquare,
+  BookOpen,
+  Building,
+  CreditCard,
+  Library,
+  FileText,
   Trophy,
-  Zap,
   Bus,
-  DoorOpen,
-  LogOut,
   ChevronDown,
-  ChevronUp,
-  Menu,
-  X,
+  ChevronRight,
+  LogOut,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  onToggle?: () => void;
-  activeItem?: string;
-  onItemClick?: (item: string) => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({
-  isOpen,
-  onClose,
-  onToggle,
-  activeItem = "",
-  onItemClick,
-}) => {
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const router = useRouter();
-  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set());
+  const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});
 
   const toggleMenu = (menu: string) => {
-    const newExpanded = new Set(expandedMenus);
-    if (newExpanded.has(menu)) {
-      newExpanded.delete(menu);
-    } else {
-      newExpanded.add(menu);
-    }
-    setExpandedMenus(newExpanded);
-  };
-
-  const handleItemClick = (item: string) => {
-    if (onItemClick) onItemClick(item);
+    setOpenMenus((prev) => ({ ...prev, [menu]: !prev[menu] }));
   };
 
   const menuItems = [
-    { id: "home", label: "Home", icon: Home },
-    { id: "calendar", label: "My Calendar", icon: Calendar },
-    { id: "sap", label: "SAP", icon: FileText },
-    { id: "courses", label: "My Courses", icon: Book },
-    { id: "registration", label: "Registration", icon: ClipboardList },
-    { id: "timetable", label: "Time Table", icon: Clock },
-    { id: "faculty", label: "My Faculty", icon: Users },
+    { name: "Home", icon: Home, subItems: [] },
     {
-      id: "examination",
-      label: "Examination",
-      icon: Calculator,
-      expandable: true,
-      subItems: ["View Results", "Exam Schedule"],
+      name: "General Information",
+      icon: Info,
+      subItems: [
+        "ACADEMIC CALENDER",
+        "YOUR PROFILE",
+        "eXAMINATION PAPER",
+        "INTERNAL/FINAL EXAMINATION",
+        "SYLLABUS",
+        "GRIEVANCE",
+        "ONLINE FORM APPROVAL STATUS",
+        "STUDENT PROGRESSION INDEX",
+        "STUDENT PROGRESSION DIARY",
+        "CONTACT DETAIL",
+        "OTHER SERVICE REQUEST",
+        "ABCID VERIFICATION",
+      ],
     },
     {
-      id: "placement",
-      label: "OS & ATPC Placement",
-      icon: Briefcase,
-      expandable: true,
-      subItems: ["Placement Drives", "Company Info"],
+      name: "Academics",
+      icon: GraduationCap,
+      subItems: [
+        "ONLINE CLASS ASSIGNMENT",
+        "E-ONLINE TEACHING PLATFORM",
+        "ONLINE TEST PORTAL",
+      ],
     },
     {
-      id: "documents",
-      label: "Student Document",
-      icon: FileText,
-      expandable: true,
-      subItems: ["Certificates", "Transcripts"],
+      name: "Communications",
+      icon: MessageSquare,
+      subItems: ["QUERY TO FACULTY", "COMMUNICATION"],
     },
-    { id: "fees", label: "Fee Details", icon: DollarSign },
-    { id: "iad", label: "IAD", icon: IdCard },
-    { id: "osec", label: "Osec Registration", icon: FileText },
-    { id: "suggestion", label: "Suggestion Box", icon: MessageSquare },
-    { id: "globaltimes", label: "The Global Times", icon: Globe },
     {
-      id: "ntcc",
-      label: "NTCC",
+      name: "Academic",
       icon: BookOpen,
-      expandable: true,
-      subItems: ["Courses", "Resources"],
+      subItems: [
+        "E-ONLINE TEACHING PLATFORM",
+        "STUDENT PROGRESS ENTRY",
+        "ONLINE CLASS RECORDING",
+        "TIME TABLE",
+        "COURSE OUTLINE",
+        "ASSESSMENT MARKS",
+        "ONLINE TEST PORTAL",
+        "EXAM RESULT",
+        "CURRENT BACKLOG",
+        "SUBJECT CHOICE FILLING",
+        "ASSIGNMENTS",
+        "ASSESSMENT SUBMISSION",
+        "SPECIAL LEAVE REQUEST",
+        "ATTENDANCE STATUS",
+        "ATTENDANCE SUB/WISE",
+        "LEAVE APPLICATION",
+        "PLAGIARISM CHECK",
+      ],
     },
-    { id: "scholarship", label: "Scholarship", icon: GraduationCap },
-    { id: "wifi", label: "Register for WiFi", icon: Wifi },
-    { id: "abcid", label: "ABC ID", icon: IdCard },
-    { id: "research", label: "Research Repository", icon: Book },
-    { id: "hostel", label: "Hostel", icon: Home },
-    { id: "achievement", label: "Achievement", icon: Trophy },
-    { id: "asap", label: "ASAP", icon: Zap },
-    { id: "transcript", label: "Apply for Transcript", icon: FileText },
-    { id: "bus", label: "Apply for Charter Bus Service", icon: Bus },
-    { id: "withdrawal", label: "Withdrawal", icon: DoorOpen },
-    { id: "logout", label: "Logout", icon: LogOut },
+    {
+      name: "Hostel",
+      icon: Building,
+      subItems: [
+        "HOSTEL/BUS SERVICE REQUEST",
+        "HOSTEL COMPLAINT/REQUEST",
+        "APPLY FOR HOSTEL",
+        "HOSTEL REGISTRATION",
+      ],
+    },
+    {
+      name: "Fees Transaction",
+      icon: CreditCard,
+      subItems: [
+        "VERIFIED TRANSACTION",
+        "PAY FEE ONLINE",
+        "OTHER FEE PRINT",
+        "FEES RECEIPTS",
+        "STUDENT LEDGER",
+        "ONLINE FEE TRANSACTION STATUS",
+        "FEES INSTALLMENT CHART",
+        "OTHER LEDGER",
+      ],
+    },
+    {
+      name: "Library",
+      icon: Library,
+      subItems: [
+        "OPAC",
+        "CIRCULATION LEDGER",
+        "FINE RECORDS",
+        "LIBRARY RULES & CIRCULAR",
+        "EBOOK CENTER",
+      ],
+    },
+    {
+      name: "Student Document",
+      icon: FileText,
+      subItems: ["DOCUMENT DOWNLOADS"],
+    },
+    {
+      name: "Non Academics",
+      icon: Trophy,
+      subItems: ["SPORTS TOURNAMENTS", "COMPETITIONS", "BEHAVIOUR"],
+    },
+    {
+      name: "Transportation",
+      icon: Bus,
+      subItems: ["BUS STOPS", "BUS ROUTES", "APPLY BUS STOPS"],
+    },
+    { name: "Achievement", icon: Trophy, subItems: [] },
+    { name: "Logout", icon: LogOut, subItems: [] },
   ];
 
   return (
     <>
-      {/* Overlay for mobile */}
+      {/* Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
+          className="fixed inset-0 bg-black bg-opacity-50 z-20"
           onClick={onClose}
         />
       )}
 
-      <div
-        className={`fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 shadow-lg transform ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        } transition-transform duration-300 ease-in-out flex flex-col h-full`}
-      >
-        <div className="p-5 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-blue-600">UNIHUB</h1>
-            <div className="flex items-center gap-2">
-              {onToggle && (
-                <button
-                  onClick={onToggle}
-                  className="p-1 hover:bg-gray-100 rounded-lg"
-                >
-                  <Menu className="w-5 h-5 text-gray-500" />
-                </button>
-              )}
-              <button
-                onClick={onClose}
-                className="p-1 hover:bg-gray-100 rounded-lg md:hidden"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-          </div>
-          <p className="text-gray-500 text-sm mt-1">Student Portal</p>
+      {/* Sidebar */}
+      <div className={`fixed left-0 top-0 h-screen w-64 bg-[#0A0E27] border-r border-gray-700 overflow-y-auto z-30 transform transition-transform duration-300 ${
+        isOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        <div className="p-5 bg-[#1a1f3a] border-b border-gray-700">
+          <h1 className="text-2xl font-bold text-white">UNIHUB</h1>
+          <p className="text-gray-300 text-sm mt-1">Student Portal</p>
         </div>
-        <nav className="flex-1 flex flex-col justify-between h-0">
-          <div className="overflow-y-auto flex-1">
-            <ul className="py-2">
-              {menuItems.map((item) => (
-                <li key={item.id}>
-                  <div
-                    className={`px-5 py-3 text-gray-700 hover:bg-blue-50 cursor-pointer border-l-4 transition-colors ${
-                      activeItem === item.id
-                        ? "border-blue-500 bg-blue-50 text-blue-700"
-                        : "border-transparent hover:border-blue-300"
-                    } flex items-center justify-between`}
-                    onClick={() => {
-                      if (item.expandable) {
-                        toggleMenu(item.id);
-                      } else {
-                        handleItemClick(item.id);
-                      }
-                    }}
-                  >
-                    <div className="flex items-center">
-                      <item.icon className="w-5 h-5 mr-3 text-gray-500" />
-                      <span>{item.label}</span>
-                    </div>
-                    {item.expandable && (
-                      <div>
-                        {expandedMenus.has(item.id) ? (
-                          <ChevronUp className="w-4 h-4 text-gray-500" />
-                        ) : (
-                          <ChevronDown className="w-4 h-4 text-gray-500" />
-                        )}
+        <nav className="flex-1">
+          <ul>
+            {menuItems.map((item) => (
+              <li key={item.name}>
+                {item.subItems.length > 0 ? (
+                  <>
+                    <div
+                      className="px-5 py-3 text-gray-300 hover:bg-[#1a1f3a] hover:text-white cursor-pointer flex items-center justify-between transition-colors"
+                      onClick={() => toggleMenu(item.name)}
+                    >
+                      <div className="flex items-center">
+                        <item.icon className="w-5 h-5 mr-3 text-gray-400" />
+                        {item.name}
                       </div>
-                    )}
+                      {openMenus[item.name] ? (
+                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                      )}
+                    </div>
+                    <div
+                      className={`overflow-hidden transition-all duration-300 ${
+                        openMenus[item.name] ? "max-h-96" : "max-h-0"
+                      }`}
+                    >
+                      <ul className="ml-8">
+                        {item.subItems.map((subItem) => (
+                          <li
+                            key={subItem}
+                            className="px-5 py-2 text-gray-400 hover:bg-[#1a1f3a] hover:text-white cursor-pointer transition-colors"
+                          >
+                            {subItem}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </>
+                ) : item.name === "Logout" ? (
+                  <button
+                    onClick={() => {
+                      localStorage.clear();
+                      router.push("/");
+                    }}
+                    className="flex items-center gap-3 w-full px-5 py-3 text-red-400 hover:bg-[#1a1f3a] font-medium transition-colors"
+                  >
+                    <item.icon className="w-5 h-5" />
+                    <span>{item.name}</span>
+                  </button>
+                ) : (
+                  <div className="px-5 py-3 text-gray-300 hover:bg-[#1a1f3a] hover:text-white cursor-pointer flex items-center transition-colors">
+                    <item.icon className="w-5 h-5 mr-3 text-gray-400" />
+                    {item.name}
                   </div>
-                  {item.expandable && expandedMenus.has(item.id) && (
-                    <ul className="ml-8 transition-all duration-300 ease-in-out">
-                      {item.subItems?.map((subItem, index) => (
-                        <li
-                          key={index}
-                          className="px-5 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer border-l-4 border-transparent hover:border-blue-300 transition-colors"
-                          onClick={() => handleItemClick(`${item.id}-${subItem}`)}
-                        >
-                          {subItem}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
+                )}
+              </li>
+            ))}
+          </ul>
         </nav>
       </div>
     </>
