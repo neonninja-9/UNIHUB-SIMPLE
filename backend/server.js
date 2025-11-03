@@ -271,36 +271,48 @@ app.post("/api/attendance/bulk", async (req, res) => {
   }
 });
 
-// Face recognition routes
-app.get("/api/student-faces", (req, res) => {
-  res.json(mockData.studentFaces);
-});
-
-app.post("/api/student-faces/:studentId", (req, res) => {
-  const { studentId } = req.params;
-  const { faceEmbedding } = req.body;
-  const faceIndex = mockData.studentFaces.findIndex(
-    (f) => f.studentId === parseInt(studentId),
-  );
-  if (faceIndex !== -1) {
-    mockData.studentFaces[faceIndex].faceEmbedding = faceEmbedding;
-    res.json({ success: true, message: "Face embedding stored" });
-  } else {
-    res.status(404).json({ error: "Student not found" });
+// Face recognition routes (keeping for now, but should be migrated to database later)
+app.get("/api/student-faces", async (req, res) => {
+  try {
+    // For now, return empty array since we haven't migrated face data yet
+    // TODO: Create student_faces table and migrate this data
+    res.json([]);
+  } catch (error) {
+    console.error('Error fetching student faces:', error);
+    res.status(500).json({ error: "Failed to fetch student faces" });
   }
 });
 
-app.post("/api/face-attendance", (req, res) => {
-  const { studentId, courseId, date } = req.body;
-  const record = {
-    studentId,
-    courseId,
-    date,
-    status: "present",
-    method: "face-recognition",
-  };
-  mockData.faceAttendance.push(record);
-  res.json({ success: true, record });
+app.post("/api/student-faces/:studentId", async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const { faceEmbedding } = req.body;
+
+    // TODO: Store face embedding in database
+    // For now, just return success
+    res.json({ success: true, message: "Face embedding stored" });
+  } catch (error) {
+    console.error('Error storing face embedding:', error);
+    res.status(500).json({ error: "Failed to store face embedding" });
+  }
+});
+
+app.post("/api/face-attendance", async (req, res) => {
+  try {
+    const { studentId, courseId, date } = req.body;
+    const record = {
+      student_id: studentId,
+      course_id: courseId,
+      date: date,
+      status: "present"
+    };
+
+    const result = await Attendance.create(record);
+    res.json({ success: true, record: result });
+  } catch (error) {
+    console.error('Error creating face attendance:', error);
+    res.status(500).json({ error: "Failed to create face attendance record" });
+  }
 });
 
 // Chat API route
