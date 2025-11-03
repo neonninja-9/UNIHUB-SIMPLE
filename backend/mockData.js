@@ -2,7 +2,7 @@ module.exports = {
   students: [
     { 
       id: 1, 
-      name: "Alex Doe", 
+      name: "gourav", 
       email: "alex.doe@unihub.com", 
       roll_number: "STU001",
       class_section: "A",
@@ -32,7 +32,7 @@ module.exports = {
   faculty: [
     { 
       id: 1, 
-      name: "Emily Reed", 
+      name: "guru", 
       email: "e.reed@unihub.com", 
       employee_id: "EMP001",
       department: "Computer Science",

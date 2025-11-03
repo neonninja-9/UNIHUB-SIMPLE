@@ -9,6 +9,14 @@ interface Student {
   descriptor: Float32Array;
 }
 
+interface AttendanceRecord {
+  studentId: string;
+  courseId: string;
+  date: string;
+  status: string;
+  synced: boolean;
+}
+
 const attendanceStatuses = ["present", "absent", "late"];
 
 export function AttendanceWidget() {
@@ -17,6 +25,24 @@ export function AttendanceWidget() {
   const [attendance, setAttendance] = useState<{ [studentId: string]: string }>(
     {},
   );
+  const [courseId, setCourseId] = useState<string>("");
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [syncing, setSyncing] = useState(false);
+  const [unsyncedCount, setUnsyncedCount] = useState(0);
+
+  // Network status detection
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Load data from localStorage after component mounts
   useEffect(() => {
@@ -39,7 +65,31 @@ export function AttendanceWidget() {
     if (storedAttendance) {
       setAttendance(JSON.parse(storedAttendance));
     }
+
+    // Load course ID from localStorage or set default
+    const storedCourseId = localStorage.getItem("selected_course_id");
+    if (storedCourseId) {
+      setCourseId(storedCourseId);
+    } else {
+      setCourseId("101"); // Default course ID
+    }
+
+    // Count unsynced records
+    updateUnsyncedCount();
   }, [today]);
+
+  // Update unsynced count
+  const updateUnsyncedCount = () => {
+    const unsyncedRecords = JSON.parse(localStorage.getItem("unsynced_attendance") || "[]");
+    setUnsyncedCount(unsyncedRecords.length);
+  };
+
+  // Auto-sync when coming online
+  useEffect(() => {
+    if (isOnline && !syncing) {
+      syncUnsyncedAttendance();
+    }
+  }, [isOnline, syncing]);
 
   const [saved, setSaved] = useState(false);
   const [isFaceRecognitionActive, setIsFaceRecognitionActive] = useState(false);
@@ -216,8 +266,63 @@ export function AttendanceWidget() {
     setSaved(false);
   };
 
+  // Sync unsynced attendance records to backend
+  const syncUnsyncedAttendance = async () => {
+    const unsyncedRecords: AttendanceRecord[] = JSON.parse(localStorage.getItem("unsynced_attendance") || "[]");
+    if (unsyncedRecords.length === 0) return;
+
+    setSyncing(true);
+    try {
+      const response = await fetch("http://localhost:3002/api/attendance/bulk", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(unsyncedRecords),
+      });
+
+      if (response.ok) {
+        // Mark records as synced and remove from localStorage
+        localStorage.setItem("unsynced_attendance", "[]");
+        setUnsyncedCount(0);
+        console.log("Attendance synced successfully");
+      } else {
+        console.error("Failed to sync attendance");
+      }
+    } catch (error) {
+      console.error("Error syncing attendance:", error);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const handleSave = () => {
+    // Save attendance locally
+    localStorage.setItem(`attendance_${today}`, JSON.stringify(attendance));
+
+    // Create attendance records for syncing
+    const attendanceRecords: AttendanceRecord[] = students
+      .filter(student => attendance[student.id])
+      .map(student => ({
+        studentId: student.id,
+        courseId: courseId,
+        date: today,
+        status: attendance[student.id],
+        synced: false,
+      }));
+
+    // Add to unsynced queue
+    const existingUnsynced = JSON.parse(localStorage.getItem("unsynced_attendance") || "[]");
+    const updatedUnsynced = [...existingUnsynced, ...attendanceRecords];
+    localStorage.setItem("unsynced_attendance", JSON.stringify(updatedUnsynced));
+
     setSaved(true);
+    updateUnsyncedCount();
+
+    // Try to sync immediately if online
+    if (isOnline) {
+      syncUnsyncedAttendance();
+    }
   };
 
   const handleReset = () => {
@@ -235,6 +340,19 @@ export function AttendanceWidget() {
         <span className="font-semibold text-gray-800 dark:text-gray-200">
           {today}
         </span>
+        <span className={`ml-2 px-2 py-1 rounded text-xs font-medium ${isOnline ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
+          {isOnline ? 'Online' : 'Offline'}
+        </span>
+        {unsyncedCount > 0 && (
+          <span className="ml-2 px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+            {unsyncedCount} unsynced
+          </span>
+        )}
+        {syncing && (
+          <span className="ml-2 px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+            Syncing...
+          </span>
+        )}
       </p>
 
       {/* Student Registration Section */}

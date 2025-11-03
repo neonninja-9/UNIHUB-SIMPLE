@@ -98,6 +98,37 @@ app.post("/api/attendance", (req, res) => {
   res.json({ success: true, ...req.body });
 });
 
+// Bulk attendance sync endpoint
+app.post("/api/attendance/bulk", (req, res) => {
+  const attendanceRecords = req.body; // Array of attendance records
+  if (!Array.isArray(attendanceRecords)) {
+    return res.status(400).json({ error: "Expected array of attendance records" });
+  }
+
+  // In a real app, you'd save these to a database
+  // For now, we'll just log and return success
+  console.log("Bulk attendance sync received:", attendanceRecords.length, "records");
+
+  // Add to mock data
+  attendanceRecords.forEach(record => {
+    const existingIndex = mockData.attendance.findIndex(
+      a => a.studentId === record.studentId && a.courseId === record.courseId && a.date === record.date
+    );
+    if (existingIndex !== -1) {
+      mockData.attendance[existingIndex] = { ...record, status: record.status };
+    } else {
+      mockData.attendance.push({
+        studentId: record.studentId,
+        courseId: record.courseId,
+        date: record.date,
+        status: record.status
+      });
+    }
+  });
+
+  res.json({ success: true, synced: attendanceRecords.length });
+});
+
 // Face recognition routes
 app.get("/api/student-faces", (req, res) => {
   res.json(mockData.studentFaces);

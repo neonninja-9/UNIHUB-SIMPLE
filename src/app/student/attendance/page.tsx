@@ -129,7 +129,7 @@ export default function AttendancePage() {
           student_id: 1,
           course_id: 2,
           date: `2025-10-${(i + 1).toString().padStart(2, "0")}`,
-          status: (i % 5 === 0 ? "absent" : "present") as
+          status: (i < 10 ? "present" : "absent") as
             | "present"
             | "absent"
             | "late",
@@ -143,7 +143,7 @@ export default function AttendancePage() {
           student_id: 1,
           course_id: 3,
           date: `2025-10-${(i + 1).toString().padStart(2, "0")}`,
-          status: (i % 6 === 0 ? "absent" : "present") as
+          status: (i < 12 ? "present" : "absent") as
             | "present"
             | "absent"
             | "late",

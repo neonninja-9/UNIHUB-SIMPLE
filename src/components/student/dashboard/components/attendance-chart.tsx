@@ -135,22 +135,14 @@ export function AttendanceChart({ courses, attendance }: AttendanceChartProps) {
                 ? (presentClasses / totalClasses) * 100
                 : 0;
 
-              // Get gradient colors based on subject
-              const getSubjectColors = (subjectName: string) => {
-                const name = subjectName.toLowerCase();
-                if (name.includes("math"))
-                  return { start: "#34d399", end: "#10b981" };
-                if (name.includes("data") || name.includes("structures"))
-                  return { start: "#60a5fa", end: "#2563eb" };
-                if (name.includes("behavioural") || name.includes("science"))
-                  return { start: "#f472b6", end: "#ec4899" };
-                if (name.includes("communication") || name.includes("skills"))
-                  return { start: "#fbbf24", end: "#f59e0b" };
-                // Default colors
-                return { start: "#34d399", end: "#10b981" };
+              // Get color based on attendance percentage
+              const getAttendanceColor = (percentage: number) => {
+                if (percentage < 75) return "#ef4444"; // Red for < 75%
+                if (percentage >= 85) return "#10b981"; // Green for >= 85%
+                return "#fbbf24"; // Yellow for 75-84%
               };
 
-              const colors = getSubjectColors(course.name);
+              const barColor = getAttendanceColor(percentage);
 
               return (
                 <div
@@ -179,7 +171,7 @@ export function AttendanceChart({ courses, attendance }: AttendanceChartProps) {
                       style={
                         {
                           width: `${percentage}%`,
-                          background: `linear-gradient(90deg, ${colors.start}, ${colors.end})`,
+                          background: barColor,
                           "--percent": `${percentage}%`,
                         } as React.CSSProperties
                       }
