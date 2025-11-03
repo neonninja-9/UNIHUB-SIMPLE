@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Attendance System</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #005345; padding: 20px; }
+        table { width: 80%; margin: 20px auto; border-collapse: collapse; background: rgb(47, 141, 110); }
+        th, td { border: 1px solid #1d704d; padding: 10px; text-align: center; }
+        button { display: block; margin: 20px auto; padding: 10px 20px; background: #74f57b; color: rgb(0, 0, 0); border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: hsl(130, 92%, 66%); }
+    </style>
+</head>
+<body>
+    <h1 style="text-align:center;">🎓 Attendance Sheet</h1>
+
+    {% if not show %}
+    <form action="/submit" method="post">
+        <table>
+            <tr>
+                <th>Name</th>
+                <th>Enrollment No</th>
+                <th>Status</th>
+            </tr>
+            {% for s in students %}
+            <tr>
+                <td>{{ s[name_col] }}</td>
+                <td>{{ s[enroll_col] }}</td>
+                <td>
+                    <label><input type="radio" name="{{ s[enroll_col] }}" value="P"> P</label>
+                    <label><input type="radio" name="{{ s[enroll_col] }}" value="OD"> OD</label>
+                    <label><input type="radio" name="{{ s[enroll_col] }}" value="A"> A</label>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        <button type="submit">Submit Attendance</button>
+    </form>
+    {% else %}
+    <h3 style="text-align:center;">✅ Attendance Submitted</h3>
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Enrollment</th>
+            <th>Status</th>
+        </tr>
+        {% for a in attendance %}
+        <tr>
+            <td>{{ a.name }}</td>
+            <td>{{ a.roll }}</td>
+            <td>{{ a.status }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="/" style="display:block;text-align:center;">← Back</a>
+    {% endif %}
+</body>
+</html>
