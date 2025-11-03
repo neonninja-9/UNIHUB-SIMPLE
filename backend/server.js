@@ -1,7 +1,17 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const mockData = require("./mockData");
+const pool = require("./db");
+
+// Import models
+const Student = require("./models/students");
+const Faculty = require("./models/faculty");
+const Attendance = require("./models/attendance");
+const Course = require("./models/courses");
+const Result = require("./models/results");
+const Schedule = require("./models/schedules");
+const TeachingAssignment = require("./models/teachingAssignments");
+const Admin = require("./models/admins");
 
 const app = express();
 const PORT = process.env.BACKEND_PORT || 3002;
@@ -16,117 +26,249 @@ app.get("/api/health", (req, res) => {
 });
 
 // Student routes
-app.get("/api/students", (req, res) => {
-  res.json(mockData.students);
+app.get("/api/students", async (req, res) => {
+  try {
+    const students = await Student.findAll();
+    res.json(students);
+  } catch (error) {
+    console.error('Error fetching students:', error);
+    res.status(500).json({ error: "Failed to fetch students" });
+  }
 });
 
-app.get("/api/students/:id", (req, res) => {
-  const student = mockData.students.find((s) => String(s.id) === req.params.id);
-  if (!student) return res.status(404).json({ error: "Student not found" });
-  res.json(student);
+app.get("/api/students/:id", async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id);
+    if (!student) return res.status(404).json({ error: "Student not found" });
+    res.json(student);
+  } catch (error) {
+    console.error('Error fetching student:', error);
+    res.status(500).json({ error: "Failed to fetch student" });
+  }
 });
 
-app.get("/api/students/:id/schedule", (req, res) => {
-  const schedule = mockData.schedules[req.params.id] || [];
-  res.json(schedule);
+app.get("/api/students/:id/schedule", async (req, res) => {
+  try {
+    const schedule = await Schedule.findByStudentId(req.params.id);
+    res.json(schedule);
+  } catch (error) {
+    console.error('Error fetching schedule:', error);
+    res.status(500).json({ error: "Failed to fetch schedule" });
+  }
 });
 
 // Faculty routes
-app.get("/api/faculty", (req, res) => {
-  res.json(mockData.faculty);
+app.get("/api/faculty", async (req, res) => {
+  try {
+    const faculty = await Faculty.findAll();
+    res.json(faculty);
+  } catch (error) {
+    console.error('Error fetching faculty:', error);
+    res.status(500).json({ error: "Failed to fetch faculty" });
+  }
 });
 
-app.get("/api/faculty/:id", (req, res) => {
-  const faculty = mockData.faculty.find((f) => String(f.id) === req.params.id);
-  if (!faculty)
-    return res.status(404).json({ error: "Faculty member not found" });
-  res.json(faculty);
+app.get("/api/faculty/:id", async (req, res) => {
+  try {
+    const faculty = await Faculty.findById(req.params.id);
+    if (!faculty)
+      return res.status(404).json({ error: "Faculty member not found" });
+    res.json(faculty);
+  } catch (error) {
+    console.error('Error fetching faculty:', error);
+    res.status(500).json({ error: "Failed to fetch faculty member" });
+  }
 });
 
 // Authentication
-app.post("/api/login", (req, res) => {
-  const { email, role } = req.body;
-  let user;
-  if (role === "student") {
-    user = mockData.students.find((u) => u.email === email);
-  } else if (role === "faculty") {
-    user = mockData.faculty.find((u) => u.email === email);
+app.post("/api/login", async (req, res) => {
+  try {
+    const { email, role } = req.body;
+    let user;
+    if (role === "student") {
+      user = await Student.findByEmail(email);
+    } else if (role === "faculty") {
+      user = await Faculty.findByEmail(email);
+    } else if (role === "admin") {
+      user = await Admin.findByEmail(email);
+    }
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+    res.json({
+      success: true,
+      user: { id: user.id, name: user.name, email: user.email, role },
+    });
+  } catch (error) {
+    console.error('Error during login:', error);
+    res.status(500).json({ error: "Login failed" });
   }
-  if (!user) {
-    return res.status(401).json({ error: "Invalid credentials" });
-  }
-  res.json({
-    success: true,
-    user: { id: user.id, name: user.name, email: user.email, role },
-  });
 });
 
 // Additional routes for results and attendance
-app.get("/api/students/:id/attendance", (req, res) => {
-  const { courseId } = req.query;
-  const attendance = mockData.attendance.filter(
-    (a) =>
-      String(a.studentId) === req.params.id &&
-      (!courseId || String(a.courseId) === String(courseId)),
-  );
-  res.json(attendance);
+app.get("/api/students/:id/attendance", async (req, res) => {
+  try {
+    const { courseId } = req.query;
+    const attendance = await Attendance.findByStudentAndCourse(req.params.id, courseId);
+    res.json(attendance);
+  } catch (error) {
+    console.error('Error fetching attendance:', error);
+    res.status(500).json({ error: "Failed to fetch attendance" });
+  }
 });
 
-app.get("/api/students/:id/results", (req, res) => {
-  const results = mockData.results.filter(
-    (r) => String(r.studentId) === req.params.id,
-  );
-  res.json(results);
+app.get("/api/students/:id/results", async (req, res) => {
+  try {
+    const results = await Result.findByStudentId(req.params.id);
+    res.json(results);
+  } catch (error) {
+    console.error('Error fetching results:', error);
+    res.status(500).json({ error: "Failed to fetch results" });
+  }
 });
 
 // Faculty teaching assignments
-app.get("/api/faculty/:id/teaching", (req, res) => {
-  const assignments = mockData.teachingAssignments.filter(
-    (t) => String(t.facultyId) === req.params.id,
-  );
-  res.json(assignments);
+app.get("/api/faculty/:id/teaching", async (req, res) => {
+  try {
+    const assignments = await TeachingAssignment.findByFacultyId(req.params.id);
+    res.json(assignments);
+  } catch (error) {
+    console.error('Error fetching teaching assignments:', error);
+    res.status(500).json({ error: "Failed to fetch teaching assignments" });
+  }
 });
 
 // Course routes
-app.get("/api/courses", (req, res) => {
-  res.json(mockData.courses);
+app.get("/api/courses", async (req, res) => {
+  try {
+    const courses = await Course.findAll();
+    res.json(courses);
+  } catch (error) {
+    console.error('Error fetching courses:', error);
+    res.status(500).json({ error: "Failed to fetch courses" });
+  }
+});
+
+// Admin routes for students
+app.post("/api/students", async (req, res) => {
+  try {
+    const studentData = req.body;
+    const result = await Student.create(studentData);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('Error creating student:', error);
+    res.status(500).json({ error: "Failed to create student" });
+  }
+});
+
+app.put("/api/students/:id", async (req, res) => {
+  try {
+    const studentData = req.body;
+    const result = await Student.update(req.params.id, studentData);
+    if (!result) return res.status(404).json({ error: "Student not found" });
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('Error updating student:', error);
+    res.status(500).json({ error: "Failed to update student" });
+  }
+});
+
+app.delete("/api/students/:id", async (req, res) => {
+  try {
+    const result = await Student.delete(req.params.id);
+    if (!result) return res.status(404).json({ error: "Student not found" });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting student:', error);
+    res.status(500).json({ error: "Failed to delete student" });
+  }
+});
+
+app.post("/api/students/:id/reset-password", async (req, res) => {
+  try {
+    // In a real implementation, this would send a password reset email
+    // For now, we'll just return success
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error resetting student password:', error);
+    res.status(500).json({ error: "Failed to reset password" });
+  }
+});
+
+// Admin routes for faculty
+app.post("/api/faculty", async (req, res) => {
+  try {
+    const facultyData = req.body;
+    const result = await Faculty.create(facultyData);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('Error creating faculty:', error);
+    res.status(500).json({ error: "Failed to create faculty" });
+  }
+});
+
+app.put("/api/faculty/:id", async (req, res) => {
+  try {
+    const facultyData = req.body;
+    const result = await Faculty.update(req.params.id, facultyData);
+    if (!result) return res.status(404).json({ error: "Faculty not found" });
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('Error updating faculty:', error);
+    res.status(500).json({ error: "Failed to update faculty" });
+  }
+});
+
+app.delete("/api/faculty/:id", async (req, res) => {
+  try {
+    const result = await Faculty.delete(req.params.id);
+    if (!result) return res.status(404).json({ error: "Faculty not found" });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting faculty:', error);
+    res.status(500).json({ error: "Failed to delete faculty" });
+  }
+});
+
+app.post("/api/faculty/:id/reset-password", async (req, res) => {
+  try {
+    // In a real implementation, this would send a password reset email
+    // For now, we'll just return success
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error resetting faculty password:', error);
+    res.status(500).json({ error: "Failed to reset password" });
+  }
 });
 
 // Attendance marking (for faculty)
-app.post("/api/attendance", (req, res) => {
-  // Just echo request in mock server
-  res.json({ success: true, ...req.body });
+app.post("/api/attendance", async (req, res) => {
+  try {
+    const attendanceData = req.body;
+    const result = await Attendance.create(attendanceData);
+    res.json({ success: true, attendance: result });
+  } catch (error) {
+    console.error('Error creating attendance:', error);
+    res.status(500).json({ error: "Failed to create attendance record" });
+  }
 });
 
 // Bulk attendance sync endpoint
-app.post("/api/attendance/bulk", (req, res) => {
-  const attendanceRecords = req.body; // Array of attendance records
-  if (!Array.isArray(attendanceRecords)) {
-    return res.status(400).json({ error: "Expected array of attendance records" });
-  }
-
-  // In a real app, you'd save these to a database
-  // For now, we'll just log and return success
-  console.log("Bulk attendance sync received:", attendanceRecords.length, "records");
-
-  // Add to mock data
-  attendanceRecords.forEach(record => {
-    const existingIndex = mockData.attendance.findIndex(
-      a => a.studentId === record.studentId && a.courseId === record.courseId && a.date === record.date
-    );
-    if (existingIndex !== -1) {
-      mockData.attendance[existingIndex] = { ...record, status: record.status };
-    } else {
-      mockData.attendance.push({
-        studentId: record.studentId,
-        courseId: record.courseId,
-        date: record.date,
-        status: record.status
-      });
+app.post("/api/attendance/bulk", async (req, res) => {
+  try {
+    const attendanceRecords = req.body; // Array of attendance records
+    if (!Array.isArray(attendanceRecords)) {
+      return res.status(400).json({ error: "Expected array of attendance records" });
     }
-  });
 
-  res.json({ success: true, synced: attendanceRecords.length });
+    console.log("Bulk attendance sync received:", attendanceRecords.length, "records");
+
+    const result = await Attendance.bulkCreate(attendanceRecords);
+    res.json({ success: true, synced: result.length });
+  } catch (error) {
+    console.error('Error bulk creating attendance:', error);
+    res.status(500).json({ error: "Failed to sync attendance records" });
+  }
 });
 
 // Face recognition routes
