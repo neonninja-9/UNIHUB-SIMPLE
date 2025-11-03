@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, jsonify
 import pandas as pd
+import os
 
 app = Flask(__name__)
 
-# Excel file loadpyt
+# Excel file load
 df = pd.read_excel("Contact Information (Responses).xlsx")
 
 # Normalize column names
@@ -47,5 +48,15 @@ def show():
                            name_col=name_col,
                            enroll_col=enroll_col)
 
+@app.route('/api/attendance/bulk', methods=['POST'])
+def bulk_attendance():
+    try:
+        data = request.get_json()
+        # Process bulk attendance data
+        # For now, just return success
+        return jsonify({'message': 'Attendance synced successfully', 'count': len(data)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=3002)
