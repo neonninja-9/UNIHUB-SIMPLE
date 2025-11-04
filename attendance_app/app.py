@@ -1,18 +1,51 @@
 from flask import Flask, render_template, request, redirect, jsonify
 import pandas as pd
 import os
-from twilio.rest import Client
-import os
+import requests
+import re
 
 app = Flask(__name__)
 
-# Twilio credentials (replace with your actual credentials)
-TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID', 'your_account_sid')
-TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN', 'your_auth_token')
-TWILIO_WHATSAPP_NUMBER = os.getenv('TWILIO_WHATSAPP_NUMBER', 'whatsapp:+1234567890')  # Your Twilio WhatsApp number
-TEACHER_WHATSAPP_NUMBER = os.getenv('TEACHER_WHATSAPP_NUMBER', 'whatsapp:+0987654321')  # Teacher's WhatsApp number
+# Whapi.Cloud credentials
+WHAPI_TOKEN = os.getenv('WHAPI_TOKEN', 'JuyXkWpiXJ3vNbmYlUT3sN9HxtWL6Wrl')
+WHAPI_URL = 'https://gate.whapi.cloud/messages/text'
+TEACHER_WHATSAPP_NUMBER = os.getenv('TEACHER_WHATSAPP_NUMBER', '919876543210')  # Teacher's WhatsApp number (format: 919876543210)
 
-client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+def format_phone_number(phone):
+    """Format phone number to Whapi.Cloud format (e.g., 919876543210 - no + sign, just digits)"""
+    # Remove any non-digit characters except leading +
+    if phone.startswith('+'):
+        phone = phone[1:]
+    # Remove any spaces, dashes, or other characters
+    phone = re.sub(r'\D', '', phone)
+    # Ensure it starts with country code (default to 91 for India if 10 digits)
+    if len(phone) == 10:
+        phone = f'91{phone}'
+    return phone
+
+def send_whatsapp_message(to, message):
+    """Send WhatsApp message using Whapi.Cloud API"""
+    try:
+        formatted_phone = format_phone_number(to)
+        response = requests.post(
+            WHAPI_URL,
+            headers={
+                'Authorization': f'Bearer {WHAPI_TOKEN}',
+                'Content-Type': 'application/json'
+            },
+            json={
+                'to': formatted_phone,
+                'body': message
+            }
+        )
+        
+        if response.ok:
+            data = response.json()
+            return {'success': True, 'message_id': data.get('id'), 'phone': formatted_phone}
+        else:
+            return {'success': False, 'error': response.text, 'status_code': response.status_code}
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
 
 # Excel file load
 df = pd.read_excel("Contact Information (Responses).xlsx")
@@ -78,34 +111,28 @@ def bulk_attendance():
                             'date': record.get('date', 'Unknown')
                         })
 
-        # Send WhatsApp notifications to absent students
+        # Send WhatsApp notifications to absent students using Whapi.Cloud
         for student in absent_students:
-            try:
-                message = client.messages.create(
-                    body=f"Dear {student['name']}, you were marked absent on {student['date']}. Please contact your teacher if this is incorrect.",
-                    from_=TWILIO_WHATSAPP_NUMBER,
-                    to=f"whatsapp:{student['whatsapp']}"
-                )
-                print(f"Sent absent notification to {student['name']}: {message.sid}")
-            except Exception as e:
-                print(f"Failed to send message to {student['name']}: {str(e)}")
+            message_body = f"Dear {student['name']}, you were marked absent on {student['date']}. Please contact your teacher if this is incorrect."
+            result = send_whatsapp_message(student['whatsapp'], message_body)
+            
+            if result['success']:
+                print(f"Sent absent notification to {student['name']}: Message ID {result.get('message_id', 'N/A')}")
+            else:
+                print(f"Failed to send message to {student['name']}: {result.get('error', 'Unknown error')}")
 
-        # Send summary to teacher
+        # Send summary to teacher using Whapi.Cloud
         if absent_students:
             summary = f"Attendance Summary for {data[0].get('date', 'Today')}:\n"
             summary += f"Total absent: {len(absent_students)}\n"
             for student in absent_students:
                 summary += f"- {student['name']}\n"
 
-            try:
-                teacher_message = client.messages.create(
-                    body=summary,
-                    from_=TWILIO_WHATSAPP_NUMBER,
-                    to=TEACHER_WHATSAPP_NUMBER
-                )
-                print(f"Sent summary to teacher: {teacher_message.sid}")
-            except Exception as e:
-                print(f"Failed to send summary to teacher: {str(e)}")
+            result = send_whatsapp_message(TEACHER_WHATSAPP_NUMBER, summary)
+            if result['success']:
+                print(f"Sent summary to teacher: Message ID {result.get('message_id', 'N/A')}")
+            else:
+                print(f"Failed to send summary to teacher: {result.get('error', 'Unknown error')}")
 
         return jsonify({'message': 'Attendance synced successfully', 'count': len(data), 'absent_notifications': len(absent_students)})
     except Exception as e:

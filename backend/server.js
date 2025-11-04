@@ -153,11 +153,35 @@ app.get("/api/courses", async (req, res) => {
 app.post("/api/students", async (req, res) => {
   try {
     const studentData = req.body;
+    
+    // Validate required fields
+    if (!studentData.name || !studentData.email) {
+      return res.status(400).json({ error: "Name and email are required" });
+    }
+    
     const result = await Student.create(studentData);
     res.json({ success: true, data: result });
   } catch (error) {
     console.error('Error creating student:', error);
-    res.status(500).json({ error: "Failed to create student" });
+    
+    // Provide more detailed error message
+    let errorMessage = "Failed to create student";
+    if (error.code === '23505') { // Unique violation
+      errorMessage = error.constraint?.includes('email') 
+        ? "A student with this email already exists"
+        : error.constraint?.includes('enrollment') 
+          ? "A student with this enrollment number already exists"
+          : "A student with this information already exists";
+    } else if (error.code === '23503') { // Foreign key violation
+      errorMessage = "Invalid reference data";
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    res.status(500).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
@@ -274,9 +298,9 @@ app.post("/api/attendance/bulk", async (req, res) => {
 // Face recognition routes (keeping for now, but should be migrated to database later)
 app.get("/api/student-faces", async (req, res) => {
   try {
-    // For now, return empty array since we haven't migrated face data yet
-    // TODO: Create student_faces table and migrate this data
-    res.json([]);
+    const StudentFace = require('./models/studentFaces');
+    const faces = await StudentFace.findAll();
+    res.json({ success: true, data: faces });
   } catch (error) {
     console.error('Error fetching student faces:', error);
     res.status(500).json({ error: "Failed to fetch student faces" });
@@ -286,14 +310,75 @@ app.get("/api/student-faces", async (req, res) => {
 app.post("/api/student-faces/:studentId", async (req, res) => {
   try {
     const { studentId } = req.params;
-    const { faceEmbedding } = req.body;
+    const { faceEmbedding, whatsappNumber } = req.body;
 
-    // TODO: Store face embedding in database
-    // For now, just return success
-    res.json({ success: true, message: "Face embedding stored" });
+    console.log(`Received face embedding request for student ID: ${studentId}`);
+    console.log(`Face embedding type: ${typeof faceEmbedding}, is array: ${Array.isArray(faceEmbedding)}, length: ${Array.isArray(faceEmbedding) ? faceEmbedding.length : 'N/A'}`);
+
+    // Validate studentId
+    const studentIdNum = parseInt(studentId, 10);
+    if (isNaN(studentIdNum)) {
+      console.error('Invalid student ID:', studentId);
+      return res.status(400).json({ error: "Invalid student ID" });
+    }
+
+    if (!faceEmbedding) {
+      console.error('Face embedding is missing');
+      return res.status(400).json({ error: "Face embedding is required" });
+    }
+
+    if (!Array.isArray(faceEmbedding)) {
+      console.error('Face embedding is not an array:', typeof faceEmbedding);
+      return res.status(400).json({ error: "Face embedding must be an array" });
+    }
+
+    // Validate face embedding array
+    if (faceEmbedding.length === 0) {
+      console.error('Face embedding array is empty');
+      return res.status(400).json({ error: "Face embedding array cannot be empty" });
+    }
+
+    // Check if embedding contains valid numbers
+    if (!faceEmbedding.every(val => typeof val === 'number' && !isNaN(val))) {
+      console.error('Face embedding contains invalid values');
+      return res.status(400).json({ error: "Face embedding must contain only valid numbers" });
+    }
+
+    console.log(`Saving face embedding for student ${studentIdNum}, embedding size: ${faceEmbedding.length}`);
+
+    const StudentFace = require('./models/studentFaces');
+    const result = await StudentFace.create(studentIdNum, faceEmbedding, whatsappNumber || null);
+    
+    console.log(`Face embedding saved successfully for student ${studentIdNum}`);
+    res.json({ success: true, data: result });
   } catch (error) {
     console.error('Error storing face embedding:', error);
-    res.status(500).json({ error: "Failed to store face embedding" });
+    console.error('Error stack:', error.stack);
+    
+    // Provide more detailed error message
+    const errorMessage = error.message || "Failed to store face embedding";
+    const isTableError = error.message && error.message.includes('does not exist');
+    
+    if (isTableError) {
+      return res.status(500).json({ 
+        error: "Database table not found. Please run the migration script to create the student_faces table.",
+        details: error.message
+      });
+    }
+    
+    // Check for foreign key constraint errors
+    if (error.code === '23503') {
+      return res.status(400).json({ 
+        error: "Student not found. Please ensure the student exists before saving face data.",
+        details: error.message
+      });
+    }
+    
+    res.status(500).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      code: error.code
+    });
   }
 });
 

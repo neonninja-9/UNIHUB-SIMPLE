@@ -27,40 +27,173 @@ export function AttendanceWidget() {
     {},
   );
   const [courseId, setCourseId] = useState<string>("");
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  // Initialize as true to avoid hydration mismatch (will be set correctly in useEffect)
+  const [isOnline, setIsOnline] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [unsyncedCount, setUnsyncedCount] = useState(0);
 
-  // Network status detection
+  // Network status detection - set after mount to avoid hydration mismatch
   useEffect(() => {
+    // Set initial online status after component mounts (client-side only)
+    if (typeof window !== 'undefined') {
+      setIsOnline(navigator.onLine);
+    }
+
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+    }
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+      }
     };
   }, []);
 
-  // Load data from localStorage after component mounts
+  // Load students from permanent database storage on component mount
   useEffect(() => {
-    const storedStudents = localStorage.getItem("attendance_students");
-    if (storedStudents) {
+    const loadStudentsFromDatabase = async () => {
+      console.log("Loading students from permanent database...");
       try {
-        const parsed = JSON.parse(storedStudents);
-        setStudents(
-          parsed.map((s: any) => ({
-            ...s,
-            descriptor: new Float32Array(s.descriptor),
-          })),
-        );
-      } catch (e) {
-        console.error("Error parsing stored students:", e);
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
+        
+        // Fetch both student faces and student data
+        const [facesResponse, studentsResponse] = await Promise.all([
+          fetch(`${API_URL}/api/student-faces`).catch((err) => {
+            console.error("Error fetching student faces:", err);
+            return null;
+          }),
+          fetch(`${API_URL}/api/students`).catch((err) => {
+            console.error("Error fetching students:", err);
+            return null;
+          }),
+        ]);
+
+        if (facesResponse?.ok && studentsResponse?.ok) {
+          const facesData = await facesResponse.json();
+          const studentsData = await studentsResponse.json();
+          
+          console.log(`Loaded ${Array.isArray(studentsData) ? studentsData.length : studentsData.data?.length || 0} students from database`);
+          console.log(`Loaded ${Array.isArray(facesData.data || facesData) ? (facesData.data || facesData).length : 0} face embeddings from database`);
+          
+          // Handle different response formats
+          const faces = facesData.data || facesData;
+          const students = studentsData.data || studentsData;
+          
+          // Combine student data with face embeddings
+          const studentsWithFaces: Student[] = (Array.isArray(faces) ? faces : [])
+            .map((face: any): Student | null => {
+              const student = (Array.isArray(students) ? students : []).find((s: any) => s.id === face.student_id);
+              if (student && face.face_embedding) {
+                try {
+                  // Handle both string (JSON) and array formats for face_embedding
+                  let embedding: number[];
+                  if (typeof face.face_embedding === 'string') {
+                    embedding = JSON.parse(face.face_embedding);
+                  } else if (Array.isArray(face.face_embedding)) {
+                    embedding = face.face_embedding;
+                  } else {
+                    console.warn(`Invalid face embedding format for student ${face.student_id}`);
+                    return null;
+                  }
+                  
+                  const studentObj: Student = {
+                    id: student.id.toString(),
+                    name: student.name,
+                    enrollment: student.enrollment_no || student.roll_number || "",
+                    whatsappNumber: face.whatsapp_number || "",
+                    descriptor: new Float32Array(embedding),
+                  };
+                  return studentObj;
+                } catch (parseError) {
+                  console.error(`Error parsing face embedding for student ${face.student_id}:`, parseError);
+                  return null;
+                }
+              }
+              return null;
+            })
+            .filter((s): s is Student => s !== null);
+
+          if (studentsWithFaces.length > 0) {
+            console.log(`Successfully loaded ${studentsWithFaces.length} students with face data from database`);
+            setStudents(studentsWithFaces);
+            
+            // Also save to localStorage as backup (for offline support)
+            localStorage.setItem(
+              "attendance_students",
+              JSON.stringify(
+                studentsWithFaces.map((s: Student) => ({
+                  ...s,
+                  descriptor: Array.from(s.descriptor),
+                })),
+              ),
+            );
+            console.log("Students saved to localStorage as backup");
+          } else {
+            console.log("No students with face data found in database");
+            // Still try localStorage as fallback
+            const storedStudents = localStorage.getItem("attendance_students");
+            if (storedStudents) {
+              try {
+                const parsed = JSON.parse(storedStudents);
+                setStudents(
+                  parsed.map((s: any) => ({
+                    ...s,
+                    descriptor: new Float32Array(s.descriptor),
+                  })),
+                );
+                console.log(`Loaded ${parsed.length} students from localStorage fallback`);
+              } catch (e) {
+                console.error("Error parsing stored students:", e);
+              }
+            }
+          }
+        } else {
+          console.warn("Database not available, falling back to localStorage");
+          // Fallback to localStorage if database is not available
+          const storedStudents = localStorage.getItem("attendance_students");
+          if (storedStudents) {
+            try {
+              const parsed = JSON.parse(storedStudents);
+              setStudents(
+                parsed.map((s: any) => ({
+                  ...s,
+                  descriptor: new Float32Array(s.descriptor),
+                })),
+              );
+              console.log(`Loaded ${parsed.length} students from localStorage`);
+            } catch (e) {
+              console.error("Error parsing stored students:", e);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error loading students from database:", error);
+        // Fallback to localStorage
+        const storedStudents = localStorage.getItem("attendance_students");
+        if (storedStudents) {
+          try {
+            const parsed = JSON.parse(storedStudents);
+            setStudents(
+              parsed.map((s: any) => ({
+                ...s,
+                descriptor: new Float32Array(s.descriptor),
+              })),
+            );
+            console.log(`Loaded ${parsed.length} students from localStorage fallback`);
+          } catch (e) {
+            console.error("Error parsing stored students:", e);
+          }
+        }
       }
-    }
+    };
+
+    loadStudentsFromDatabase();
 
     const storedAttendance = localStorage.getItem(`attendance_${today}`);
     if (storedAttendance) {
@@ -104,10 +237,14 @@ export function AttendanceWidget() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isMarking, setIsMarking] = useState(false);
   const [classPhoto, setClassPhoto] = useState<File | null>(null);
+  const [captureCountdown, setCaptureCountdown] = useState<number | null>(null);
+  const [faceDetected, setFaceDetected] = useState(false);
+  const [captureStatus, setCaptureStatus] = useState<string>("");
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const detectionIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load face-api.js models
   useEffect(() => {
@@ -124,17 +261,25 @@ export function AttendanceWidget() {
     loadModels();
   }, []);
 
-  // Save students to localStorage
+  // Save students to localStorage as backup (database is the permanent storage)
   useEffect(() => {
-    localStorage.setItem(
-      "attendance_students",
-      JSON.stringify(
-        students.map((s) => ({
-          ...s,
-          descriptor: Array.from(s.descriptor),
-        })),
-      ),
-    );
+    // Only save to localStorage if we have students (don't overwrite with empty array on initial load)
+    if (students.length > 0) {
+      try {
+        localStorage.setItem(
+          "attendance_students",
+          JSON.stringify(
+            students.map((s) => ({
+              ...s,
+              descriptor: Array.from(s.descriptor),
+            })),
+          ),
+        );
+        console.log(`Synced ${students.length} students to localStorage as backup`);
+      } catch (error) {
+        console.error("Error saving to localStorage:", error);
+      }
+    }
   }, [students]);
 
   // Save attendance to localStorage
@@ -142,13 +287,147 @@ export function AttendanceWidget() {
     localStorage.setItem(`attendance_${today}`, JSON.stringify(attendance));
   }, [attendance, today]);
 
+  // Real-time face detection and drawing
+  useEffect(() => {
+    if (!isRegistering || !videoRef.current || !canvasRef.current || !modelsLoaded) {
+      return;
+    }
+
+    const detectFaces = async () => {
+      if (!videoRef.current || !canvasRef.current) return;
+
+      try {
+        const detections = await faceapi
+          .detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+          .withFaceLandmarks();
+
+        const canvas = canvasRef.current;
+        const video = videoRef.current;
+        const ctx = canvas.getContext("2d");
+        
+        if (!ctx) return;
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (detections.length === 0) {
+          setFaceDetected(false);
+          setCaptureStatus("No face detected. Please position yourself in front of the camera.");
+          ctx.fillStyle = "rgba(255, 0, 0, 0.3)";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          return;
+        }
+
+        if (detections.length > 1) {
+          setFaceDetected(false);
+          setCaptureStatus("Multiple faces detected. Only one face should be visible.");
+          ctx.fillStyle = "rgba(255, 165, 0, 0.3)";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          detections.forEach((detection) => {
+            const box = (detection as any).detection?.box || (detection as any).box;
+            const { x, y, width, height } = box;
+            ctx.strokeStyle = "orange";
+            ctx.lineWidth = 3;
+            ctx.strokeRect(x, y, width, height);
+          });
+          return;
+        }
+
+        // Single face detected - check quality
+        const detection = detections[0];
+        const box = (detection as any).detection?.box || (detection as any).box;
+        const { x, y, width, height } = box;
+        
+        // Check face size (should be at least 10% of frame)
+        const faceSizePercent = (width * height) / (canvas.width * canvas.height);
+        if (faceSizePercent < 0.05) {
+          setFaceDetected(false);
+          setCaptureStatus("Face too small. Please move closer to the camera.");
+          ctx.strokeStyle = "orange";
+          ctx.lineWidth = 3;
+          ctx.strokeRect(x, y, width, height);
+          return;
+        }
+
+        if (faceSizePercent > 0.5) {
+          setFaceDetected(false);
+          setCaptureStatus("Face too large. Please move further from the camera.");
+          ctx.strokeStyle = "orange";
+          ctx.lineWidth = 3;
+          ctx.strokeRect(x, y, width, height);
+          return;
+        }
+
+        // Check if face is centered (within 40% of center)
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const faceCenterX = x + width / 2;
+        const faceCenterY = y + height / 2;
+        const offsetX = Math.abs(faceCenterX - centerX) / canvas.width;
+        const offsetY = Math.abs(faceCenterY - centerY) / canvas.height;
+
+        if (offsetX > 0.2 || offsetY > 0.2) {
+          setFaceDetected(false);
+          setCaptureStatus("Please center your face in the frame.");
+          ctx.strokeStyle = "orange";
+          ctx.lineWidth = 3;
+          ctx.strokeRect(x, y, width, height);
+          return;
+        }
+
+        // Face is good - draw green box
+        setFaceDetected(true);
+        setCaptureStatus("Face detected! Ready to capture...");
+        ctx.strokeStyle = "green";
+        ctx.lineWidth = 4;
+        ctx.strokeRect(x, y, width, height);
+        
+        // Draw center guide
+        ctx.strokeStyle = "rgba(0, 255, 0, 0.5)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(centerX - 50, centerY);
+        ctx.lineTo(centerX + 50, centerY);
+        ctx.moveTo(centerX, centerY - 50);
+        ctx.lineTo(centerX, centerY + 50);
+        ctx.stroke();
+
+      } catch (error) {
+        console.error("Error detecting faces:", error);
+      }
+    };
+
+    detectionIntervalRef.current = setInterval(detectFaces, 100); // Check every 100ms
+
+    return () => {
+      if (detectionIntervalRef.current) {
+        clearInterval(detectionIntervalRef.current);
+        detectionIntervalRef.current = null;
+      }
+    };
+  }, [isRegistering, modelsLoaded]);
+
   const registerStudent = async () => {
     if (!modelsLoaded || !registerName.trim() || !registerEnrollment.trim())
       return;
 
     setIsRegistering(true);
+    setFaceDetected(false);
+    setCaptureStatus("Initializing camera...");
+    
+    let stream: MediaStream | null = null;
+    
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      // Request high quality video
+      stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: "user"
+        } 
+      });
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.play();
@@ -161,23 +440,358 @@ export function AttendanceWidget() {
         }
       });
 
-      if (!videoRef.current) return;
+      if (!videoRef.current) {
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop());
+        }
+        setIsRegistering(false);
+        setCaptureStatus("");
+        setFaceDetected(false);
+        return;
+      }
 
-      const detections = await faceapi
-        .detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions())
-        .withFaceLandmarks()
-        .withFaceDescriptors();
+      setCaptureStatus("Position your face in the center. We will capture in 3 seconds...");
 
-      if (detections.length === 0) {
-        alert(
-          "No face detected. Please position yourself in front of the camera.",
-        );
-      } else if (detections.length > 1) {
-        alert(
-          "Multiple faces detected. Please ensure only one face is visible.",
-        );
-      } else {
-        const descriptor = detections[0].descriptor;
+      // Countdown before capture
+      for (let i = 3; i > 0; i--) {
+        setCaptureCountdown(i);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      setCaptureCountdown(null);
+
+      // Wait for good face detection
+      let attempts = 0;
+      const maxAttempts = 10;
+      let bestDetection: any = null;
+      let bestScore = 0;
+
+      while (attempts < maxAttempts) {
+        if (!videoRef.current) break;
+
+        const detections = await faceapi
+          .detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+          .withFaceLandmarks()
+          .withFaceDescriptors();
+
+        if (detections.length === 0) {
+          setCaptureStatus(`No face detected. Attempt ${attempts + 1}/${maxAttempts}...`);
+          attempts++;
+          await new Promise(resolve => setTimeout(resolve, 500));
+          continue;
+        }
+
+        if (detections.length > 1) {
+          setCaptureStatus(`Multiple faces detected. Attempt ${attempts + 1}/${maxAttempts}...`);
+          attempts++;
+          await new Promise(resolve => setTimeout(resolve, 500));
+          continue;
+        }
+
+        // Single face - check quality
+        const detection = detections[0];
+        const box = detection.detection?.box || (detection as any).box;
+        const { width, height } = box;
+        const faceSize = width * height;
+        const videoSize = videoRef.current.videoWidth * videoRef.current.videoHeight;
+        const sizeScore = faceSize / videoSize;
+
+        // Prefer faces that are 10-30% of frame size
+        if (sizeScore >= 0.05 && sizeScore <= 0.3) {
+          const detectionScore = detection.detection?.score || (detection as any).detection?.score || 0.8;
+          const qualityScore = sizeScore * 100 + detectionScore * 100;
+          
+          if (qualityScore > bestScore) {
+            bestScore = qualityScore;
+            bestDetection = detection;
+            
+            if (qualityScore > 15) {
+              // Good enough quality, capture now
+              break;
+            }
+          }
+        }
+
+        attempts++;
+        setCaptureStatus(`Capturing... Attempt ${attempts}/${maxAttempts} (Quality: ${Math.round(bestScore)})`);
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+
+      // Stop face detection interval
+      if (detectionIntervalRef.current) {
+        clearInterval(detectionIntervalRef.current);
+        detectionIntervalRef.current = null;
+      }
+
+      // Use best detection or latest detection
+      let finalDetection = bestDetection;
+      if (!finalDetection && videoRef.current) {
+        const lastDetections = await faceapi
+          .detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+          .withFaceLandmarks()
+          .withFaceDescriptors();
+        finalDetection = lastDetections[0] || null;
+      }
+
+      if (!finalDetection || !finalDetection.descriptor) {
+        alert("Could not capture face properly. Please ensure:\n- Good lighting\n- Face is centered\n- Only one person is visible\n- Camera has proper permissions");
+        stream.getTracks().forEach((track) => track.stop());
+        if (videoRef.current) videoRef.current.srcObject = null;
+        setIsRegistering(false);
+        setFaceDetected(false);
+        setCaptureStatus("");
+        return;
+      }
+
+      const descriptor = finalDetection.descriptor;
+      const descriptorArray = Array.from(descriptor);
+      setCaptureStatus("Face captured! Saving to database...");
+
+      // Save student to database
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
+      
+      try {
+        // Check if student already exists by enrollment number
+        const enrollmentNo = registerEnrollment.trim();
+        const email = `${enrollmentNo.toLowerCase().replace(/\s+/g, '')}@university.edu`;
+        
+        let studentId: number | null = null;
+        
+        // Try to find existing student by enrollment number
+        try {
+          const checkResponse = await fetch(`${API_URL}/api/students`);
+          if (checkResponse.ok) {
+            const allStudents = await checkResponse.json();
+            const existingStudent = (Array.isArray(allStudents) ? allStudents : allStudents.data || []).find(
+              (s: any) => s.enrollment_no === enrollmentNo || s.roll_number === enrollmentNo
+            );
+            if (existingStudent) {
+              studentId = existingStudent.id;
+              console.log(`Student with enrollment ${enrollmentNo} already exists, using existing ID: ${studentId}`);
+            }
+          }
+        } catch (checkError) {
+          console.log("Could not check for existing student, will create new one");
+        }
+
+        // If student doesn't exist, create a new one
+        if (!studentId) {
+          const studentData = {
+            name: registerName.trim(),
+            enrollment_no: enrollmentNo,
+            email: email,
+            roll_number: enrollmentNo,
+            password: "default123", // Default password, should be changed
+            role: "student",
+          };
+
+          const studentResponse = await fetch(`${API_URL}/api/students`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(studentData),
+          });
+
+          if (!studentResponse.ok) {
+            let errorMessage = "Failed to create student";
+            try {
+              const errorData = await studentResponse.json();
+              errorMessage = errorData.error || errorMessage;
+              console.error("Student creation error details:", errorData);
+              
+              // If it's a duplicate error, try to find the existing student
+              if (errorData.error?.includes("already exists") || studentResponse.status === 409) {
+                const checkResponse = await fetch(`${API_URL}/api/students`);
+                if (checkResponse.ok) {
+                  const allStudents = await checkResponse.json();
+                  const existingStudent = (Array.isArray(allStudents) ? allStudents : allStudents.data || []).find(
+                    (s: any) => s.enrollment_no === enrollmentNo || s.roll_number === enrollmentNo || s.email === email
+                  );
+                  if (existingStudent) {
+                    studentId = existingStudent.id;
+                    console.log(`Found existing student after duplicate error, using ID: ${studentId}`);
+                  }
+                }
+              }
+              
+              if (!studentId) {
+                throw new Error(`${errorMessage} (Status: ${studentResponse.status})`);
+              }
+            } catch (e: any) {
+              if (!studentId) {
+                const errorText = await studentResponse.text().catch(() => "");
+                console.error("Student creation error response:", errorText);
+                throw new Error(errorText || e.message || "Failed to create student");
+              }
+            }
+          } else {
+            const studentResult = await studentResponse.json();
+            studentId = studentResult.data?.id || studentResult.id;
+          }
+        }
+        
+        if (!studentId) {
+          throw new Error("Student ID not found in response");
+        }
+
+        // Then, save the face embedding
+        console.log(`Saving face embedding for student ID: ${studentId}, embedding size: ${descriptorArray.length}`);
+        console.log(`First 5 values of embedding:`, descriptorArray.slice(0, 5));
+        
+        const faceResponse = await fetch(`${API_URL}/api/student-faces/${studentId}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            faceEmbedding: descriptorArray,
+            whatsappNumber: registerWhatsapp.trim() || null,
+          }),
+        });
+
+        console.log(`Face response status: ${faceResponse.status}, ok: ${faceResponse.ok}`);
+        
+        // Read the response body once
+        const responseText = await faceResponse.text();
+        console.log("Raw face response:", responseText);
+        
+        if (!faceResponse.ok) {
+          let errorMessage = "Failed to save face data";
+          let errorData: any = {};
+          
+          try {
+            if (responseText) {
+              errorData = JSON.parse(responseText);
+              console.error("Face embedding error details (JSON):", errorData);
+              errorMessage = errorData.error || errorData.message || errorMessage;
+              
+              // Log additional details if available
+              if (errorData.details) {
+                console.error("Error details:", errorData.details);
+              }
+              if (errorData.code) {
+                console.error("Error code:", errorData.code);
+              }
+            } else {
+              errorMessage = `Server returned empty response (Status: ${faceResponse.status})`;
+            }
+          } catch (e: any) {
+            console.error("Error parsing error response:", e);
+            errorMessage = responseText || errorMessage;
+          }
+          
+          throw new Error(`${errorMessage} (Status: ${faceResponse.status})`);
+        }
+
+        // Parse successful response
+        let faceResult;
+        try {
+          if (responseText) {
+            faceResult = JSON.parse(responseText);
+            console.log("Face embedding saved successfully:", faceResult);
+          } else {
+            console.warn("Empty response from face embedding save, but status was OK");
+            faceResult = { success: true };
+          }
+        } catch (parseError) {
+          console.error("Error parsing face response:", parseError);
+          console.error("Response text was:", responseText);
+          throw new Error("Invalid JSON response from server when saving face embedding");
+        }
+        
+        // Verify the save by fetching the face data back
+        try {
+          const verifyResponse = await fetch(`${API_URL}/api/student-faces`);
+          if (verifyResponse.ok) {
+            const allFaces = await verifyResponse.json();
+            const savedFace = (allFaces.data || []).find((f: any) => f.student_id === studentId);
+            if (savedFace) {
+              console.log("Verified: Face embedding exists in database for student", studentId);
+            } else {
+              console.warn("Warning: Face embedding not found in database after save");
+            }
+          }
+        } catch (verifyError) {
+          console.warn("Could not verify face embedding save:", verifyError);
+        }
+
+        // Stop video stream
+        stream.getTracks().forEach((track) => track.stop());
+        if (videoRef.current) {
+          videoRef.current.srcObject = null;
+        }
+        
+        // Clear canvas
+        if (canvasRef.current) {
+          const ctx = canvasRef.current.getContext("2d");
+          if (ctx) {
+            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          }
+        }
+
+        setCaptureStatus("");
+        setFaceDetected(false);
+        setCaptureCountdown(null);
+
+        const savedName = registerName.trim();
+        const savedEnrollment = registerEnrollment.trim();
+        
+        setRegisterName("");
+        setRegisterEnrollment("");
+        setRegisterWhatsapp("");
+
+        // Show success message
+        alert(`✅ Student "${savedName}" registered successfully!\n\n📋 Student ID: ${studentId}\n📝 Enrollment: ${savedEnrollment}\n💾 Face data saved permanently to database\n\nThis student will persist across sessions and page refreshes.`);
+        
+        // Reload students from database to ensure UI is in sync
+        console.log("Reloading students from database after registration...");
+        const reloadResponse = await fetch(`${API_URL}/api/student-faces`);
+        if (reloadResponse.ok) {
+          const reloadFaces = await reloadResponse.json();
+          const faces = reloadFaces.data || reloadFaces;
+          const studentsResp = await fetch(`${API_URL}/api/students`);
+          if (studentsResp.ok) {
+            const studentsData = await studentsResp.json();
+            const students = studentsData.data || studentsData;
+            
+            const updatedStudents: Student[] = (Array.isArray(faces) ? faces : [])
+              .map((face: any) => {
+                const student = (Array.isArray(students) ? students : []).find((s: any) => s.id === face.student_id);
+                if (student && face.face_embedding) {
+                  const embedding = typeof face.face_embedding === 'string' 
+                    ? JSON.parse(face.face_embedding) 
+                    : face.face_embedding;
+                  return {
+                    id: student.id.toString(),
+                    name: student.name,
+                    enrollment: student.enrollment_no || student.roll_number || "",
+                    whatsappNumber: face.whatsapp_number || "",
+                    descriptor: new Float32Array(embedding),
+                  };
+                }
+                return null;
+              })
+              .filter((s): s is Student => s !== null);
+            
+            setStudents(updatedStudents);
+            console.log(`Reloaded ${updatedStudents.length} students from database`);
+          }
+        }
+      } catch (dbError: any) {
+        console.error("Error saving to database:", dbError);
+        
+        // Stop stream on error
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop());
+        }
+        if (videoRef.current) {
+          videoRef.current.srcObject = null;
+        }
+        setCaptureStatus("");
+        setFaceDetected(false);
+        setCaptureCountdown(null);
+        
+        // Fallback: save to localStorage only
         const newStudent: Student = {
           id: Date.now().toString(),
           name: registerName.trim(),
@@ -186,15 +800,8 @@ export function AttendanceWidget() {
           descriptor,
         };
         setStudents((prev) => [...prev, newStudent]);
-        setRegisterName("");
-        setRegisterEnrollment("");
-        setRegisterWhatsapp("");
-        alert("Student registered successfully!");
+        alert(`⚠️ Student registered locally. Database error: ${dbError.message}\n\nPlease try again later to save to permanent database.`);
       }
-
-      // Stop stream
-      stream.getTracks().forEach((track) => track.stop());
-      if (videoRef.current) videoRef.current.srcObject = null;
     } catch (error) {
       console.error("Error registering student:", error);
       alert("Error accessing camera. Please check permissions.");
@@ -303,20 +910,24 @@ export function AttendanceWidget() {
   const sendWhatsAppMessage = async (phoneNumber: string, message: string) => {
     const token = "JuyXkWpiXJ3vNbmYlUT3sN9HxtWL6Wrl";
 
-    // Parse phone number to extract country code and mobile number
+    // Parse phone number for Whapi.Cloud format (e.g., 919876543210 - no + sign, just digits)
     let mobile = phoneNumber.trim();
-    let country_code = "91"; // Default to India
-
+    
+    // Remove any non-digit characters except leading +
     if (mobile.startsWith('+')) {
       mobile = mobile.substring(1).trim();
     }
-
-    if (mobile.startsWith('91')) {
-      country_code = "91";
-      mobile = mobile.substring(2).trim();
+    
+    // Remove any spaces, dashes, or other characters
+    mobile = mobile.replace(/\D/g, '');
+    
+    // Ensure it starts with country code (default to 91 for India if not present)
+    if (!mobile.startsWith('91') && mobile.length === 10) {
+      mobile = `91${mobile}`;
     }
 
-    const to = `+${country_code}${mobile}`;
+    // Whapi.Cloud expects format: 919876543210 (no + sign)
+    const to = mobile;
 
     try {
       const response = await fetch("https://gate.whapi.cloud/messages/text", {
@@ -330,13 +941,19 @@ export function AttendanceWidget() {
           body: message,
         }),
       });
+      
+      const data = await response.json();
+      
       if (response.ok) {
-        console.log(`WhatsApp message sent to ${phoneNumber}`);
+        console.log(`WhatsApp message sent to ${phoneNumber} (${to})`);
+        return { success: true, messageId: data.id };
       } else {
-        console.error(`Failed to send WhatsApp message to ${phoneNumber}: ${response.status}`);
+        console.error(`Failed to send WhatsApp message to ${phoneNumber}: ${response.status}`, data);
+        return { success: false, error: data };
       }
     } catch (error) {
       console.error("Error sending WhatsApp message:", error);
+      return { success: false, error: error };
     }
   };
 
@@ -453,19 +1070,75 @@ export function AttendanceWidget() {
               : "Loading Models..."}
         </button>
         {isRegistering && (
-          <div className="relative mt-3">
-            <video
-              ref={videoRef}
-              width="320"
-              height="240"
-              className="border border-gray-300 dark:border-gray-600 rounded-md"
-            />
-            <canvas
-              ref={canvasRef}
-              className="absolute top-0 left-0"
-              width="320"
-              height="240"
-            />
+          <div className="mt-3 space-y-2">
+            {/* Status message */}
+            {captureStatus && (
+              <div className={`p-2 rounded-md text-sm font-medium ${
+                faceDetected 
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                  : captureStatus.includes('saved') || captureStatus.includes('captured')
+                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+              }`}>
+                {captureStatus}
+              </div>
+            )}
+            
+            {/* Countdown timer */}
+            {captureCountdown !== null && (
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-600 text-white text-3xl font-bold animate-pulse">
+                  {captureCountdown}
+                </div>
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                  Get ready! Capturing in {captureCountdown} second{captureCountdown !== 1 ? 's' : ''}...
+                </p>
+              </div>
+            )}
+            
+            {/* Video feed with overlay */}
+            <div className="relative inline-block">
+              <video
+                ref={videoRef}
+                width="640"
+                height="480"
+                className="border-2 rounded-md"
+                style={{
+                  borderColor: faceDetected ? '#10b981' : '#f59e0b',
+                  borderWidth: '3px'
+                }}
+                autoPlay
+                playsInline
+                muted
+              />
+              <canvas
+                ref={canvasRef}
+                className="absolute top-0 left-0 pointer-events-none"
+                width="640"
+                height="480"
+                style={{ borderRadius: '0.375rem' }}
+              />
+              
+              {/* Face detection indicator */}
+              {faceDetected && (
+                <div className="absolute top-2 right-2 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                  <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                  Face Detected
+                </div>
+              )}
+            </div>
+            
+            {/* Instructions */}
+            <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+              <p>📋 Instructions:</p>
+              <ul className="list-disc list-inside space-y-1 ml-2">
+                <li>Position your face in the center of the frame</li>
+                <li>Ensure good lighting</li>
+                <li>Keep a neutral expression</li>
+                <li>Only one person should be visible</li>
+                <li>Wait for the green box to appear</li>
+              </ul>
+            </div>
           </div>
         )}
       </div>

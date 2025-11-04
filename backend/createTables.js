@@ -110,6 +110,19 @@ async function createTables() {
       )
     `);
 
+    // Create student_faces table for face recognition data
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS student_faces (
+        id SERIAL PRIMARY KEY,
+        student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
+        face_embedding JSONB NOT NULL,
+        whatsapp_number VARCHAR(20),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(student_id)
+      )
+    `);
+
     console.log('All tables created successfully');
   } catch (error) {
     console.error('Error creating tables:', error);
