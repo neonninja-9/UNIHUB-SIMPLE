@@ -65,6 +65,12 @@ class Attendance {
     return result.rows;
   }
 
+  static async findByDateAndCourse(date, courseId) {
+    const query = 'SELECT * FROM attendance WHERE date = $1 AND course_id = $2 ORDER BY student_id';
+    const result = await pool.query(query, [date, courseId]);
+    return result.rows;
+  }
+
   static async update(studentId, courseId, date, status) {
     const query = `
       UPDATE attendance

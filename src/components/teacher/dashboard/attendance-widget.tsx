@@ -195,10 +195,56 @@ export function AttendanceWidget() {
 
     loadStudentsFromDatabase();
 
-    const storedAttendance = localStorage.getItem(`attendance_${today}`);
-    if (storedAttendance) {
-      setAttendance(JSON.parse(storedAttendance));
-    }
+    // Load attendance from database for today
+    const loadAttendanceFromDatabase = async () => {
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
+        const storedCourseId = localStorage.getItem("selected_course_id") || "101";
+        
+        // Load attendance for today from database
+        const attendanceResponse = await fetch(`${API_URL}/api/attendance?date=${today}&courseId=${storedCourseId}`).catch(() => null);
+        
+        if (attendanceResponse?.ok) {
+          const attendanceData = await attendanceResponse.json();
+          const attendanceRecords = attendanceData.data || attendanceData || [];
+          
+          if (Array.isArray(attendanceRecords) && attendanceRecords.length > 0) {
+            // Convert database records to local attendance state format
+            const attendanceMap: { [studentId: string]: string } = {};
+            attendanceRecords.forEach((record: any) => {
+              if (record.student_id) {
+                attendanceMap[record.student_id.toString()] = record.status || "absent";
+              }
+            });
+            
+            if (Object.keys(attendanceMap).length > 0) {
+              setAttendance(attendanceMap);
+              console.log(`Loaded ${Object.keys(attendanceMap).length} attendance records from database for ${today}`);
+              
+              // Also save to localStorage as backup
+              localStorage.setItem(`attendance_${today}`, JSON.stringify(attendanceMap));
+              return;
+            }
+          }
+        }
+        
+        // Fallback to localStorage if database doesn't have data
+        const storedAttendance = localStorage.getItem(`attendance_${today}`);
+        if (storedAttendance) {
+          setAttendance(JSON.parse(storedAttendance));
+          console.log(`Loaded attendance from localStorage for ${today}`);
+        }
+      } catch (error) {
+        console.error("Error loading attendance from database:", error);
+        // Fallback to localStorage
+        const storedAttendance = localStorage.getItem(`attendance_${today}`);
+        if (storedAttendance) {
+          setAttendance(JSON.parse(storedAttendance));
+        }
+      }
+    };
+
+    loadAttendanceFromDatabase();
 
     // Load course ID from localStorage or set default
     const storedCourseId = localStorage.getItem("selected_course_id");
@@ -957,11 +1003,11 @@ export function AttendanceWidget() {
     }
   };
 
-  const handleSave = () => {
-    // Save attendance locally
+  const handleSave = async () => {
+    // Save attendance locally first
     localStorage.setItem(`attendance_${today}`, JSON.stringify(attendance));
 
-    // Create attendance records for syncing
+    // Create attendance records for database
     const attendanceRecords: AttendanceRecord[] = students
       .filter(student => attendance[student.id])
       .map(student => ({
@@ -972,13 +1018,62 @@ export function AttendanceWidget() {
         synced: false,
       }));
 
-    // Add to unsynced queue
-    const existingUnsynced = JSON.parse(localStorage.getItem("unsynced_attendance") || "[]");
-    const updatedUnsynced = [...existingUnsynced, ...attendanceRecords];
-    localStorage.setItem("unsynced_attendance", JSON.stringify(updatedUnsynced));
+    // Save to database immediately (permanent storage)
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
+    
+    try {
+      console.log(`Saving ${attendanceRecords.length} attendance records to database...`);
+      
+      // Convert to format expected by backend
+      const dbRecords = attendanceRecords.map(record => ({
+        student_id: parseInt(record.studentId),
+        course_id: parseInt(record.courseId),
+        date: record.date,
+        status: record.status
+      }));
 
-    setSaved(true);
-    updateUnsyncedCount();
+      const response = await fetch(`${API_URL}/api/attendance/bulk`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(dbRecords),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log(`✅ Successfully saved ${result.synced || attendanceRecords.length} attendance records to database`);
+        
+        // Clear unsynced queue since we've saved to database
+        localStorage.setItem("unsynced_attendance", "[]");
+        setUnsyncedCount(0);
+        setSaved(true);
+        
+        // Show success message
+        alert(`✅ Attendance saved permanently to database!\n\n📊 ${attendanceRecords.length} records saved\n📅 Date: ${today}\n\nThis data will persist across sessions and page refreshes.`);
+      } else {
+        // If database save fails, add to unsynced queue
+        const existingUnsynced = JSON.parse(localStorage.getItem("unsynced_attendance") || "[]");
+        const updatedUnsynced = [...existingUnsynced, ...attendanceRecords];
+        localStorage.setItem("unsynced_attendance", JSON.stringify(updatedUnsynced));
+        setUnsyncedCount(updatedUnsynced.length);
+        setSaved(true);
+        
+        console.warn("Database save failed, added to unsynced queue");
+        alert(`⚠️ Attendance saved locally. Will sync to database when connection is restored.\n\n${attendanceRecords.length} records queued for sync.`);
+      }
+    } catch (error) {
+      console.error("Error saving attendance to database:", error);
+      
+      // If database save fails, add to unsynced queue
+      const existingUnsynced = JSON.parse(localStorage.getItem("unsynced_attendance") || "[]");
+      const updatedUnsynced = [...existingUnsynced, ...attendanceRecords];
+      localStorage.setItem("unsynced_attendance", JSON.stringify(updatedUnsynced));
+      setUnsyncedCount(updatedUnsynced.length);
+      setSaved(true);
+      
+      alert(`⚠️ Attendance saved locally. Will sync to database when connection is restored.\n\n${attendanceRecords.length} records queued for sync.`);
+    }
 
     // Send WhatsApp notifications to students
     students.forEach(student => {
@@ -989,7 +1084,7 @@ export function AttendanceWidget() {
       }
     });
 
-    // Try to sync immediately if online
+    // Try to sync any remaining unsynced records if online
     if (isOnline) {
       syncUnsyncedAttendance();
     }

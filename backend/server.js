@@ -265,6 +265,30 @@ app.post("/api/faculty/:id/reset-password", async (req, res) => {
   }
 });
 
+// Get attendance by date and course (for loading on page refresh)
+app.get("/api/attendance", async (req, res) => {
+  try {
+    const { date, courseId } = req.query;
+    
+    if (date && courseId) {
+      // Get attendance for specific date and course
+      const attendance = await Attendance.findByDateAndCourse(date, courseId);
+      res.json({ success: true, data: attendance });
+    } else if (date) {
+      // Get all attendance for a specific date
+      const attendance = await Attendance.findByDateRange(date, date);
+      res.json({ success: true, data: attendance });
+    } else {
+      // Get all attendance
+      const attendance = await Attendance.findAll();
+      res.json({ success: true, data: attendance });
+    }
+  } catch (error) {
+    console.error('Error fetching attendance:', error);
+    res.status(500).json({ error: "Failed to fetch attendance" });
+  }
+});
+
 // Attendance marking (for faculty)
 app.post("/api/attendance", async (req, res) => {
   try {
