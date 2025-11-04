@@ -6,6 +6,7 @@ interface Student {
   id: string;
   name: string;
   enrollment: string;
+  whatsappNumber: string;
   descriptor: Float32Array;
 }
 
@@ -99,6 +100,7 @@ export function AttendanceWidget() {
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [registerName, setRegisterName] = useState("");
   const [registerEnrollment, setRegisterEnrollment] = useState("");
+  const [registerWhatsapp, setRegisterWhatsapp] = useState("");
   const [isRegistering, setIsRegistering] = useState(false);
   const [isMarking, setIsMarking] = useState(false);
   const [classPhoto, setClassPhoto] = useState<File | null>(null);
@@ -180,11 +182,13 @@ export function AttendanceWidget() {
           id: Date.now().toString(),
           name: registerName.trim(),
           enrollment: registerEnrollment.trim(),
+          whatsappNumber: registerWhatsapp.trim(),
           descriptor,
         };
         setStudents((prev) => [...prev, newStudent]);
         setRegisterName("");
         setRegisterEnrollment("");
+        setRegisterWhatsapp("");
         alert("Student registered successfully!");
       }
 
@@ -296,6 +300,46 @@ export function AttendanceWidget() {
     }
   };
 
+  const sendWhatsAppMessage = async (phoneNumber: string, message: string) => {
+    const token = "JuyXkWpiXJ3vNbmYlUT3sN9HxtWL6Wrl";
+
+    // Parse phone number to extract country code and mobile number
+    let mobile = phoneNumber.trim();
+    let country_code = "91"; // Default to India
+
+    if (mobile.startsWith('+')) {
+      mobile = mobile.substring(1).trim();
+    }
+
+    if (mobile.startsWith('91')) {
+      country_code = "91";
+      mobile = mobile.substring(2).trim();
+    }
+
+    const to = `+${country_code}${mobile}`;
+
+    try {
+      const response = await fetch("https://gate.whapi.cloud/messages/text", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          to: to,
+          body: message,
+        }),
+      });
+      if (response.ok) {
+        console.log(`WhatsApp message sent to ${phoneNumber}`);
+      } else {
+        console.error(`Failed to send WhatsApp message to ${phoneNumber}: ${response.status}`);
+      }
+    } catch (error) {
+      console.error("Error sending WhatsApp message:", error);
+    }
+  };
+
   const handleSave = () => {
     // Save attendance locally
     localStorage.setItem(`attendance_${today}`, JSON.stringify(attendance));
@@ -318,6 +362,15 @@ export function AttendanceWidget() {
 
     setSaved(true);
     updateUnsyncedCount();
+
+    // Send WhatsApp notifications to students
+    students.forEach(student => {
+      if (student.whatsappNumber) {
+        const status = attendance[student.id] || "absent";
+        const message = `Dear ${student.name}, your attendance for ${today} has been marked as ${status.toUpperCase()}.`;
+        sendWhatsAppMessage(student.whatsappNumber, message);
+      }
+    });
 
     // Try to sync immediately if online
     if (isOnline) {
@@ -360,20 +413,27 @@ export function AttendanceWidget() {
         <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-white">
           Register Student
         </h3>
-        <div className="mb-3 flex gap-2">
+        <div className="mb-3 flex flex-col gap-2">
           <input
             type="text"
             placeholder="Student Name"
             value={registerName}
             onChange={(e) => setRegisterName(e.target.value)}
-            className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           />
           <input
             type="text"
             placeholder="Enrollment Number"
             value={registerEnrollment}
             onChange={(e) => setRegisterEnrollment(e.target.value)}
-            className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          />
+          <input
+            type="text"
+            placeholder="WhatsApp Number (e.g., +1234567890)"
+            value={registerWhatsapp}
+            onChange={(e) => setRegisterWhatsapp(e.target.value)}
+            className="p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           />
         </div>
         <button
